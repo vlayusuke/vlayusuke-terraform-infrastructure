@@ -3,7 +3,7 @@
 # ===============================================================================
 resource "aws_security_group" "alb" {
   name        = "${local.project}-${local.env}-alb-sg"
-  description = "security group for ${local.project}-${local.env} External ALB"
+  description = "Security Group for ${local.project}-${local.env} External ALB"
   vpc_id      = aws_vpc.main.id
 
   ingress {
