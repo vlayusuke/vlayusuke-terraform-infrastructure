@@ -1,4 +1,4 @@
-# Slack & Chatobot Settings
+# Slack & Chatbot Settings
 hook_url_app = ""
 slack_workspace_id = ""
 slack_channel_id = ""
