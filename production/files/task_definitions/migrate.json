@@ -1,0 +1,41 @@
+[
+  {
+    "name": "migrate",
+    "image": "php:8.2",
+    "cpu": 256,
+    "memoryReservation": 512,
+    "entryPoint": [
+      "/bin/sh"
+    ],
+    "command": [
+      "-c",
+      "php artisan migrate --force"
+    ],
+    "essential": true,
+    "environment": [
+      {
+        "name": "PROJECT",
+        "value": "${project}"
+      },
+      {
+        "name": "ENV",
+        "value": "${env}"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group_prefix}-cw-migrate-cwlog",
+        "awslogs-region": "${region}",
+        "awslogs-stream-prefix": "migrate"
+      }
+    },
+    "ulimits": [
+      {
+        "softLimit": 1024000,
+        "hardLimit": 1024000,
+        "name": "nofile"
+      }
+    ]
+  }
+]

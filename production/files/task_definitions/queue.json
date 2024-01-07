@@ -1,0 +1,42 @@
+[
+  {
+    "name": "queue",
+    "image": "php:8.2",
+    "cpu": 256,
+    "memoryReservation": 512,
+    "readonlyRootFilesystem": true,
+    "entryPoint": [
+      "/bin/sh"
+    ],
+    "command": [
+      "-c",
+      "php artisan queue:work --daemon --delay=1 --tries=10"
+    ],
+    "essential": true,
+    "environment": [
+      {
+        "name": "PROJECT",
+        "value": "${project}"
+      },
+      {
+        "name": "ENV",
+        "value": "${env}"
+      }
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${log_group_prefix}-cw-queue-cwlog",
+        "awslogs-region": "${region}",
+        "awslogs-stream-prefix": "queue"
+      }
+    },
+    "ulimits": [
+      {
+        "softLimit": 1024000,
+        "hardLimit": 1024000,
+        "name": "nofile"
+      }
+    ]
+  }
+]
