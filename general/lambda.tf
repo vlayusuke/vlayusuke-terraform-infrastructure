@@ -5,18 +5,27 @@ resource "aws_lambda_function" "root_login_monitoring" {
   function_name    = "${local.project}-${local.env}-lambda-root-login-monitoring"
   role             = aws_iam_role.root_login_monitoring.arn
   handler          = "lambda_function.lambda_handler"
-  s3_bucket        = aws_s3_bucket.lambda_functions.id
-  s3_key           = aws_s3_object.root_login_monitoring.key
+  filename         = data.archive_file.root_login_monitoring.output_path
   source_code_hash = data.archive_file.root_login_monitoring.output_base64sha256
   runtime          = "python3.11"
   timeout          = 10
   memory_size      = 128
+
+  architectures = [
+    "arm64",
+  ]
 
   environment {
     variables = {
       account_name = local.project
       hook_url     = var.root_hook_url
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      source_code_hash,
+    ]
   }
 
   tags = {
@@ -30,15 +39,8 @@ data "archive_file" "root_login_monitoring" {
   output_path = "${path.module}/artifacts/root_login_monitoring.zip"
 }
 
-resource "aws_s3_object" "root_login_monitoring" {
-  bucket = aws_s3_bucket.lambda_functions.id
-  acl    = "private"
-  key    = "root_login_monitoring.zip"
-  source = data.archive_file.root_login_monitoring.output_path
-  etag   = data.archive_file.root_login_monitoring.output_md5
-}
-
 resource "aws_lambda_permission" "invoke_from_cloudwatche_logs" {
+  statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.root_login_monitoring.function_name
   principal     = "logs.${local.region}.amazonaws.com"
@@ -51,19 +53,28 @@ resource "aws_lambda_permission" "invoke_from_cloudwatche_logs" {
 # ===============================================================================
 resource "aws_lambda_function" "lambda_errors" {
   function_name    = "${local.project}-${local.env}-lambda-errors"
-  role             = aws_iam_role.lambda.arn
+  role             = aws_iam_role.lambda_error.arn
   handler          = "lambda_function.lambda_handler"
-  s3_bucket        = aws_s3_bucket.lambda_functions.id
-  s3_key           = aws_s3_object.lambda_errors.key
+  filename         = data.archive_file.lambda_errors.output_path
   source_code_hash = data.archive_file.lambda_errors.output_base64sha256
   runtime          = "python3.11"
   timeout          = 10
   memory_size      = 128
 
+  architectures = [
+    "arm64",
+  ]
+
   environment {
     variables = {
       hook_url = var.root_hook_url
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      source_code_hash,
+    ]
   }
 
   tags = {
@@ -75,14 +86,6 @@ data "archive_file" "lambda_errors" {
   type        = "zip"
   source_dir  = "${path.cwd}/files/lambda/lambda_errors"
   output_path = "${path.module}/artifacts/lambda_errors.zip"
-}
-
-resource "aws_s3_object" "lambda_errors" {
-  bucket = aws_s3_bucket.lambda_functions.id
-  acl    = "private"
-  key    = "lambda_errors.zip"
-  source = data.archive_file.lambda_errors.output_path
-  etag   = data.archive_file.lambda_errors.output_md5
 }
 
 resource "aws_lambda_permission" "lambda_errors" {
