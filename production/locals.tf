@@ -114,3 +114,13 @@ locals {
 locals {
   ssm_parameter_store_timeout_millis = 3000
 }
+
+
+# ===============================================================================
+# S3
+# ===============================================================================
+locals {
+  transition_days          = 365
+  interface_tansition_days = 31
+  expire_days              = 1827
+}
