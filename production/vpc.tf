@@ -149,7 +149,7 @@ resource "aws_route_table_association" "private" {
 
 
 # ===============================================================================
-# NAT gateway
+# NAT Gateway
 # ===============================================================================
 resource "aws_nat_gateway" "main" {
   count         = length(local.availability_zones)
@@ -161,6 +161,10 @@ resource "aws_nat_gateway" "main" {
   }
 }
 
+
+# ===============================================================================
+# EIP for NAT Gateway
+# ===============================================================================
 resource "aws_eip" "nat_gateway" {
   count  = length(local.availability_zones)
   domain = "vpc"
