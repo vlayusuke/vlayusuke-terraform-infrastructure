@@ -17,3 +17,17 @@ locals {
 locals {
   vpc_cidr_block = "172.20.0.0/16"
 }
+
+
+# ===============================================================================
+# Aurora
+# ===============================================================================
+locals {
+  rds_max_connections = 512
+  enabled_cloudwatch_logs_exports = [
+    "audit",
+    "error",
+    "general",
+    "slowquery",
+  ]
+}
