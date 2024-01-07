@@ -105,7 +105,7 @@ resource "aws_security_group" "ssm_vpce" {
 resource "aws_security_group" "sns_vpce" {
   name        = "${local.project}-${local.env}-vpce-sns-sg"
   description = "Security Group for SNS VPC EndPoint"
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     description = "VPC Security Group"
@@ -138,7 +138,7 @@ resource "aws_security_group" "sns_vpce" {
 resource "aws_security_group" "app" {
   name        = "${local.project}-${local.env}-fargate-app-sg"
   description = "security group for ${local.project}-${local.env} Fargate app"
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     description = "alb"
@@ -227,5 +227,111 @@ resource "aws_security_group" "queue" {
 
   tags = {
     Name = "${local.project}-${local.env}-fargate-queue-sg"
+  }
+}
+
+
+# ===============================================================================
+# Security Group for Aurora
+# ===============================================================================
+resource "aws_security_group" "rds" {
+  name        = "${local.project}-${local.env}-rds-sg"
+  description = "Security Group for ${local.project}-${local.env} rds"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "app"
+    protocol    = "tcp"
+    from_port   = 3306
+    to_port     = 3306
+    security_groups = [
+      aws_security_group.app.id,
+    ]
+  }
+
+  ingress {
+    description = "cron"
+    protocol    = "tcp"
+    from_port   = 3306
+    to_port     = 3306
+    security_groups = [
+      aws_security_group.cron.id,
+    ]
+  }
+
+  ingress {
+    description = "queue"
+    protocol    = "tcp"
+    from_port   = 3306
+    to_port     = 3306
+    security_groups = [
+      aws_security_group.queue.id,
+    ]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = [
+      "0.0.0.0/0",
+    ]
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-rds-sg"
+  }
+}
+
+
+# ===============================================================================
+# Security Group for ElastiCache
+# ===============================================================================
+resource "aws_security_group" "redis" {
+  name        = "${local.project}-${local.env}-redis-sg"
+  description = "Security Group for ${local.project}-${local.env} redis"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "app"
+    protocol    = "tcp"
+    from_port   = 6379
+    to_port     = 6379
+    security_groups = [
+      aws_security_group.app.id,
+    ]
+  }
+
+  ingress {
+    description = "cron"
+    protocol    = "tcp"
+    from_port   = 6379
+    to_port     = 6379
+    security_groups = [
+      aws_security_group.cron.id,
+    ]
+  }
+
+  ingress {
+    description = "queue"
+    protocol    = "tcp"
+    from_port   = 6379
+    to_port     = 6379
+    security_groups = [
+      aws_security_group.queue.id,
+    ]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = [
+      "0.0.0.0/0",
+    ]
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-redis-sg"
   }
 }
