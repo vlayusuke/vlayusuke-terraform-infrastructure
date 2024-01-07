@@ -31,3 +31,32 @@ locals {
     "slowquery",
   ]
 }
+
+
+# ===============================================================================
+# CloudWatch
+# ===============================================================================
+locals {
+  retention_in_days = 1827
+  lambda_functions = toset([
+    aws_lambda_function.rds_control.function_name,
+    aws_lambda_function.lambda_log_error_alert.function_name,
+  ])
+  app_log_group = [
+    "app-app",
+    "cron",
+    "queue",
+    "migrate",
+  ]
+  nginx_log_group = [
+    "app-nginx",
+  ]
+}
+
+
+# ===============================================================================
+# Lambda
+# ===============================================================================
+locals {
+  ssm_parameter_store_timeout_millis = 3000
+}
