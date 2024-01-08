@@ -1,0 +1,3 @@
+# Bastion Settings
+aws_key_pub_bastion = ""
+maintenance_ips = ""
