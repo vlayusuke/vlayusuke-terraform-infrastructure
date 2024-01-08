@@ -1,5 +1,5 @@
 # ===============================================================================
-# CloudTrail
+# Config
 # ===============================================================================
 resource "aws_config_configuration_recorder" "default" {
   name     = "${local.project}-${local-env}-aws-config-default-recorder"
