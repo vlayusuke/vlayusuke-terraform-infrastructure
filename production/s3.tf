@@ -1028,7 +1028,7 @@ resource "aws_s3_bucket_acl" "waf_logs" {
   acl    = "log-delivery-write"
 
   depends_on = [
-    aws_s3_bucket_ownership_controls.access_logs,
+    aws_s3_bucket_ownership_controls.waf_logs,
   ]
 }
 
