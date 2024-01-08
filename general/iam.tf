@@ -240,3 +240,81 @@ data "aws_iam_policy_document" "chatbot_guardrail" {
     ]
   }
 }
+
+
+# ===============================================================================
+# AWS Config
+# ===============================================================================
+resource "aws_iam_role" "config_recorder" {
+  name               = "${local.project}-${local.env}-iam-aws-config-recorder-role"
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.config_recorder_assume.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-aws-config-recorder-role"
+  }
+}
+
+data "aws_iam_policy_document" "config_recorder_assume" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole",
+    ]
+    principals {
+      type = "Service"
+      identifiers = [
+        "config.amazonaws.com",
+      ]
+    }
+  }
+}
+
+resource "aws_iam_policy" "config_recorder" {
+  name   = "${local.project}-${local.env}-iam-aws-config-recorder-policy"
+  policy = data.aws_iam_policy_document.config_recorder.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-aws-config-recorder-policy"
+  }
+}
+
+data "aws_iam_policy_document" "config_recorder" {
+  statement {
+    sid    = "ResourceAccess"
+    effect = "Allow"
+    actions = [
+      "s3:GetBucketAcl",
+      "s3:PutObject",
+      "s3:PutObjectAcl",
+      "SNS:Publish",
+    ]
+    resources = [
+      aws_s3_bucket.config_logs.arn,
+      "${aws_s3_bucket.config_logs.arn}/*",
+      aws_sns_topic.to_slack_general.arn,
+    ]
+  }
+
+  statement {
+    sid    = "CloudTrailAccess"
+    effect = "Allow"
+    actions = [
+      "cloudtrail:Get*",
+      "cloudtrail:Describe*",
+    ]
+    resources = [
+      "*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "config_recorder" {
+  role       = aws_iam_role.config_recorder.name
+  policy_arn = aws_iam_policy.config_recorder.arn
+}
+
+resource "aws_iam_role_policy_attachment" "config_recorder_to_AWSConfigRole" {
+  role       = aws_iam_role.config_recorder.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRole"
+}
