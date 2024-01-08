@@ -1,4 +1,75 @@
 # ===============================================================================
+# IAM Require MFA
+# ===============================================================================
+resource "aws_iam_policy" "require_mfa" {
+  name   = "${local.project}-${local.env}-iam-require-mfa-policy"
+  policy = data.aws_iam_policy_document.require_mfa.json
+}
+
+data "aws_iam_policy_document" "require_mfa" {
+  statement {
+    sid    = "IAMAccess"
+    effect = "Allow"
+    actions = [
+      "iam:UploadSSHPublicKey",
+      "iam:UpdateSSHPublicKey",
+      "iam:UpdateAccessKey",
+      "iam:ResyncMFADevice",
+      "iam:ListSSHPublicKeys",
+      "iam:ListMFADevices",
+      "iam:ListAccessKeys",
+      "iam:GetSSHPublicKey",
+      "iam:EnableMFADevice",
+      "iam:DeleteVirtualMFADevice",
+      "iam:DeleteSSHPublicKey",
+      "iam:DeleteAccessKey",
+      "iam:DeactivateMFADevice",
+      "iam:CreateVirtualMFADevice",
+      "iam:CreateAccessKey",
+      "iam:ChangePassword",
+    ]
+    resources = [
+      "arn:aws:iam::*:user/$${aws:username}",
+      "arn:aws:iam::*:mfa/$${aws:username}",
+    ]
+  }
+
+  statement {
+    sid    = "IAMPasswordPolicy"
+    effect = "Allow"
+    actions = [
+      "iam:GetAccountPasswordPolicy",
+    ]
+    resources = [
+      "*",
+    ]
+  }
+
+  statement {
+    effect = "Deny"
+    not_actions = [
+      "iam:ResyncMFADevice",
+      "iam:ListMFADevices",
+      "iam:GetAccountPasswordPolicy",
+      "iam:EnableMFADevice",
+      "iam:CreateVirtualMFADevice",
+      "iam:ChangePassword",
+    ]
+    resources = [
+      "*",
+    ]
+    condition {
+      test     = "BoolIfExists"
+      variable = "aws:MultiFactorAuthPresent"
+      values = [
+        false,
+      ]
+    }
+  }
+}
+
+
+# ===============================================================================
 # IAM for Lambda (Root Login Monitoring)
 # ===============================================================================
 resource "aws_iam_role" "root_login_monitoring" {
