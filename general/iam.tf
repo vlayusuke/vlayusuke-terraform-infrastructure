@@ -114,3 +114,129 @@ resource "aws_iam_policy_attachment" "lambda_error" {
   ]
   policy_arn = aws_iam_policy.lambda_error.arn
 }
+
+
+# ===============================================================================
+# IAM for Chatbot
+# ===============================================================================
+resource "aws_iam_role" "chatbot" {
+  name               = "${local.project}-${local.env}-iam-chatbot-general-role"
+  assume_role_policy = data.aws_iam_policy_document.chatbot_assume.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-chatbot-general-role"
+  }
+}
+
+data "aws_iam_policy_document" "chatbot_assume" {
+  statement {
+    sid    = "ChatbotAssume"
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole",
+    ]
+    principals {
+      type = "Service"
+      identifiers = [
+        "chatbot.amazonaws.com",
+      ]
+    }
+  }
+}
+
+resource "aws_iam_policy" "chatbot" {
+  name   = "${local.project}-${local.env}-iam-chatbot-general-policy"
+  path   = "/"
+  policy = data.aws_iam_policy_document.chatbot.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-chatbot-general-policy"
+  }
+}
+
+data "aws_iam_policy_document" "chatbot" {
+  statement {
+    sid    = "SNSAccess"
+    effect = "Allow"
+    actions = [
+      "sns:GetTopicAttributes",
+      "sns:SetTopicAttributes",
+      "sns:AddPermission",
+      "sns:RemovePermission",
+      "sns:DeleteTopic",
+      "sns:Subscribe",
+      "sns:Unsubscribe",
+      "sns:ListTopics",
+      "sns:ListSubscriptions",
+      "sns:ListSubscriptionsByTopic",
+      "sns:Publish",
+    ]
+    resources = [
+      "*",
+    ]
+  }
+
+  statement {
+    sid    = "LogAccess"
+    effect = "Allow"
+    actions = [
+      "logs:PutLogEvents",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+      "logs:CreateLogGroup",
+      "logs:DescribeLogGroups",
+    ]
+    resources = [
+      "arn:aws:logs:*:*:log-group:/aws/chatbot/*",
+    ]
+  }
+
+  statement {
+    sid    = "ChatbotAccess"
+    effect = "Allow"
+    actions = [
+      "chatbot:CreateSlackChannelConfiguration",
+      "chatbot:DeleteSlackWorkspaceAuthorization",
+      "chatbot:DescribeSlackChannelConfigurations",
+      "chatbot:DeleteSlackChannelConfiguration",
+      "chatbot:CreateChimeWebhookConfiguration",
+      "chatbot:DescribeChimeWebhookConfigurations",
+      "chatbot:DeleteChimeWebhookConfiguration",
+    ]
+    resources = [
+      "*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "chatbot" {
+  role       = aws_iam_role.chatbot.name
+  policy_arn = aws_iam_policy.chatbot.arn
+}
+
+
+# ===============================================================================
+# IAM for Chatbot Guardrail
+# ===============================================================================
+resource "aws_iam_policy" "chatbot_guardrail" {
+  name   = "${local.project}-${local.env}-iam-chatbot-guardrail-general-policy"
+  policy = data.aws_iam_policy_document.chatbot_guardrail.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-chatbot-guardrail-general-policy"
+  }
+}
+
+data "aws_iam_policy_document" "chatbot_guardrail" {
+  statement {
+    sid    = "ChatbotAccess"
+    effect = "Allow"
+    actions = [
+      "chatbot:DescribeSlackChannelConfigurations",
+      "chatbot:DescribeChimeWebhookConfigurations",
+    ]
+    resources = [
+      "*",
+    ]
+  }
+}
