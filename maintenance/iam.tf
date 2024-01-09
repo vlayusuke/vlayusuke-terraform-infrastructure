@@ -54,7 +54,7 @@ data "aws_iam_policy_document" "bastion" {
       "s3:Get*",
     ]
     resources = [
-      "${data.terraform_remote_state.production.outputs.s3_bucket_bastion_arn}/*",
+      "${aws_s3_bucket.bastion.arn}/*",
     ]
   }
 
