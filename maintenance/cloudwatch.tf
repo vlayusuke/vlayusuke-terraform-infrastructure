@@ -1,24 +1,4 @@
 # ===============================================================================
-# CloudWatch Log group for EC2 (Bastion)
-# ===============================================================================
-resource "aws_cloudwatch_log_group" "bastion" {
-  name              = "${local.project}-${local.env}-cw-bastion-cwlog"
-  retention_in_days = local.retention_in_days
-
-  tags = {
-    Name = "${local.project}-${local.env}-cw-bastion-cwlog"
-  }
-}
-
-resource "aws_cloudwatch_log_subscription_filter" "bastion" {
-  name            = data.terraform_remote_state.production.outputs.lambda_log_error_alert_arn
-  log_group_name  = aws_cloudwatch_log_group.bastion.name
-  filter_pattern  = "ERROR"
-  destination_arn = data.terraform_remote_state.production.outputs.lambda_log_error_alert_arn
-}
-
-
-# ===============================================================================
 # CloudWatch Metrics for EC2 (Bastion)
 # ===============================================================================
 resource "aws_cloudwatch_metric_alarm" "bastion_cpu_high" {
@@ -35,10 +15,6 @@ resource "aws_cloudwatch_metric_alarm" "bastion_cpu_high" {
   dimensions = {
     Instance = aws_instance.ec2_bastion.id
   }
-
-  alarm_actions = [
-    data.terraform_remote_state.production.outputs.sns_metric_alarm_arn,
-  ]
 
   tags = {
     Name = "${local.project}-${local.env}-ec2-bastion-cpu-high-alarm"
@@ -60,10 +36,6 @@ resource "aws_cloudwatch_metric_alarm" "bastion_memory_high" {
     Instance = aws_instance.ec2_bastion.id
   }
 
-  alarm_actions = [
-    data.terraform_remote_state.production.outputs.sns_metric_alarm_arn,
-  ]
-
   tags = {
     Name = "${local.project}-${local.env}-ec2-bastion-memory-high-alarm"
   }
@@ -83,10 +55,6 @@ resource "aws_cloudwatch_metric_alarm" "ec2_bastion_status_check_failed" {
   dimensions = {
     Instance = aws_instance.ec2_bastion.id
   }
-
-  alarm_actions = [
-    data.terraform_remote_state.production.outputs.sns_metric_alarm_arn,
-  ]
 
   tags = {
     Name = "${local.project}-${local.env}-ec2-bastion-status-check-failed-alarm"
