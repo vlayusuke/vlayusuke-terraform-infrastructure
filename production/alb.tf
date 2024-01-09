@@ -17,12 +17,33 @@ resource "aws_lb" "main" {
   ]
 
   access_logs {
-    bucket  = aws_s3_bucket.alb_log.bucket
+    bucket  = aws_s3_bucket.alb_logs.bucket
     enabled = true
   }
 
   tags = {
     Name = "${local.project}-${local.env}-main-external-alb"
+  }
+}
+
+resource "aws_lb_listener" "alb_external_listener" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-2021-06"
+  certificate_arn   = aws_acm_certificate.main.arn
+
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/html"
+      status_code  = 404
+      message_body = "<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><hr><address>Apache/2.2.31</address></body></html>"
+    }
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-external-alb-listener"
   }
 }
 
@@ -52,25 +73,6 @@ resource "aws_lb_target_group" "alb_external_tg" {
 
   tags = {
     Name = "${local.project}-${local.env}-external-alb-tg"
-  }
-}
-
-resource "aws_lb_listener" "alb_external_listener" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/html"
-      status_code  = 404
-      message_body = "<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><hr><address>Apache/2.2.31</address></body></html>"
-    }
-  }
-
-  tags = {
-    Name = "${local.project}-${local.env}-external-alb-listener"
   }
 }
 
@@ -132,5 +134,9 @@ resource "aws_lb_listener_rule" "naked" {
       query       = ""
       status_code = "HTTP_301"
     }
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-app-alb-listener-rule-redirect"
   }
 }
