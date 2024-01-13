@@ -1,4 +1,22 @@
 # ===============================================================================
+# CloudWatch Log group for SES
+# ===============================================================================
+resource "aws_cloudwatch_log_group" "bastion" {
+  name              = "${local.project}-${local.env}-cw-bastion-cwlog"
+  retention_in_days = local.retention_in_days
+
+  tags = {
+    Name = "${local.project}-${local.env}-cw-bastion-cwlog"
+  }
+}
+
+resource "aws_cloudwatch_log_stream" "bastion" {
+  name           = "${local.project}-${local.env}-cw-bastion-cwstream"
+  log_group_name = aws_cloudwatch_log_group.bastion.name
+}
+
+
+# ===============================================================================
 # CloudWatch Metrics for EC2 (Bastion)
 # ===============================================================================
 resource "aws_cloudwatch_metric_alarm" "bastion_cpu_high" {

@@ -21,13 +21,6 @@ resource "aws_internet_gateway" "maintenance" {
   }
 }
 
-resource "aws_flow_log" "maintenance_s3" {
-  log_destination      = aws_s3_bucket.vpc_flow_log.arn
-  log_destination_type = "s3"
-  traffic_type         = "ALL"
-  vpc_id               = aws_vpc.maintenance.id
-}
-
 
 # ===============================================================================
 # Public Subnet
@@ -45,7 +38,6 @@ resource "aws_subnet" "maintenance_public" {
 }
 
 resource "aws_route_table" "maintenance_public" {
-  count  = length(local.availability_zones)
   vpc_id = aws_vpc.maintenance.id
 
   lifecycle {
@@ -55,7 +47,7 @@ resource "aws_route_table" "maintenance_public" {
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-public-subnet-rtb-${local.availability_zones[count.index]}"
+    Name = "${local.project}-${local.env}-public-subnet-rtb"
   }
 }
 
