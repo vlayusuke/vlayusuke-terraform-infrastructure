@@ -4,7 +4,7 @@
 locals {
   repository = "vlayusuke/vlayusuke-terraform-infrastructure"
 
-  project = "vlayusuke-terraform"
+  project = "terraform"
   author  = "Yusuke TOMIOKA"
 
   production_state_file  = "production.terraform.tfstate"

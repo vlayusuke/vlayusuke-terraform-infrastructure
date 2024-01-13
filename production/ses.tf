@@ -16,7 +16,7 @@ resource "aws_ses_configuration_set" "main_event" {
 resource "aws_route53_record" "ses_main" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "_amazonses.${local.domain}"
-  type    = "XTX"
+  type    = "TXT"
   ttl     = 600
 
   records = [

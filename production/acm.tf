@@ -12,7 +12,7 @@ resource "aws_acm_certificate" "main" {
 
 resource "aws_route53_record" "cert_validation" {
   for_each = {
-    for i in aws_acm_aws_acm_certificate.main.domain_validation.options : i.domain_mame => {
+    for i in aws_acm_certificate.main.domain_validation_options : i.domain_mame => {
       name   = i.resource_record_name
       record = i.resource_record_value
       type   = i.resource_record_type
@@ -34,7 +34,7 @@ resource "aws_acm_certificate_validation" "main" {
   certificate_arn = aws_acm_certificate.main.arn
 
   validation_record_fqdns = [
-    for record in aws_route53_record.aws_route53_record.cert_validation :
+    for record in aws_route53_record.cert_validation :
     record.fqdn
   ]
 }

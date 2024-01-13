@@ -6,7 +6,7 @@ terraform {
 
   backend "s3" {
     bucket = "vlayusuke-terraform-infrastructure"
-    key    = "prd/production.terraform.tfstate"
+    key    = "state/production.terraform.tfstate"
     region = "ap-northeast-1"
   }
 

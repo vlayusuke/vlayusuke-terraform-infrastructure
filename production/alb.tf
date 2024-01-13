@@ -2,7 +2,7 @@
 # ALB
 # ===============================================================================
 resource "aws_lb" "main" {
-  name                       = "${local.project}-${local.env}-main-external-alb"
+  name                       = "${local.project}-${local.env}-main-ext-alb"
   internal                   = false
   load_balancer_type         = "application"
   enable_deletion_protection = false
@@ -22,7 +22,7 @@ resource "aws_lb" "main" {
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-main-external-alb"
+    Name = "${local.project}-${local.env}-main-ext-alb"
   }
 }
 
@@ -43,12 +43,12 @@ resource "aws_lb_listener" "alb_external_listener" {
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-external-alb-listener"
+    Name = "${local.project}-${local.env}-ext-alb-listener"
   }
 }
 
 resource "aws_lb_target_group" "alb_external_tg" {
-  name                 = "${local.project}-${local.env}-external-alb-tg"
+  name                 = "${local.project}-${local.env}-ext-alb-tg"
   target_type          = "ip"
   port                 = 80
   protocol             = "HTTP"
@@ -72,7 +72,7 @@ resource "aws_lb_target_group" "alb_external_tg" {
   ]
 
   tags = {
-    Name = "${local.project}-${local.env}-external-alb-tg"
+    Name = "${local.project}-${local.env}-ext-alb-tg"
   }
 }
 
