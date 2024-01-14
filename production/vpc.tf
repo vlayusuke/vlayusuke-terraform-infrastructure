@@ -86,7 +86,8 @@ resource "aws_route" "public_to_default" {
 }
 
 resource "aws_route" "public_to_maintenance" {
-  route_table_id            = aws_subnet.public.id
+  count                     = length(local.availability_zones)
+  route_table_id            = aws_subnet.public[count.index].id
   destination_cidr_block    = data.terraform_remote_state.maintenance.outputs.maintenance_vpc_cidr_block
   vpc_peering_connection_id = aws_vpc_peering_connection.maintenance.id
 }

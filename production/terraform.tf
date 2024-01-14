@@ -49,3 +49,13 @@ provider "aws" {
     }
   }
 }
+
+data "terraform_remote_state" "maintenance" {
+  backend = "s3"
+
+  config = {
+    bucket = "vlayusuke-terraform-infrastructure"
+    region = "ap-northeast-1"
+    key    = "state/maintenance.terraform.tfstate"
+  }
+}
