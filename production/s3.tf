@@ -96,12 +96,12 @@ resource "aws_s3_bucket_cors_configuration" "assets" {
   }
 }
 
-resource "aws_s3_bucket_policy" "assets_oac" {
-  bucket = aws_s3_bucket.assets.id
-  policy = data.aws_iam_policy_document.assets_oac.json
-}
-
 # In case of using CloudFront, this comment must be delete.
+# resource "aws_s3_bucket_policy" "assets_oac" {
+#   bucket = aws_s3_bucket.assets.id
+#   policy = data.aws_iam_policy_document.assets_oac.json
+# }
+#
 # data "aws_iam_policy_document" "assets_oac" {
 #   statement {
 #     sid    = "S3List"
@@ -258,12 +258,12 @@ resource "aws_s3_bucket_cors_configuration" "uploads" {
   }
 }
 
-resource "aws_s3_bucket_policy" "uploads_oac" {
-  bucket = aws_s3_bucket.uploads.id
-  policy = data.aws_iam_policy_document.uploads_oac.json
-}
-
 # In case of using CloudFront, this comment must be delete.
+# resource "aws_s3_bucket_policy" "uploads_oac" {
+#   bucket = aws_s3_bucket.uploads.id
+#   policy = data.aws_iam_policy_document.uploads_oac.json
+# }
+#
 # data "aws_iam_policy_document" "uploads_oac" {
 #   statement {
 #     sid    = "S3List"

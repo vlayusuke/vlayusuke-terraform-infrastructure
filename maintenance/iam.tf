@@ -28,12 +28,12 @@ data "aws_iam_policy_document" "bastion_assume" {
         "ec2.amazonaws.com",
       ]
     }
-    principals {
-      type = "AWS"
-      identifiers = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.project}-${local.env}-iam-bastion-role"
-      ]
-    }
+    #    principals {
+    #      type = "AWS"
+    #      identifiers = [
+    #        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.project}-${local.env}-iam-bastion-role"
+    #      ]
+    #    }
   }
 }
 

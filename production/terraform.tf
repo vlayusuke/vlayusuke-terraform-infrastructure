@@ -6,7 +6,7 @@ terraform {
 
   backend "s3" {
     bucket = "vlayusuke-terraform-infrastructure"
-    key    = "prd/production.terraform.tfstate"
+    key    = "state/production.terraform.tfstate"
     region = "ap-northeast-1"
   }
 
@@ -47,5 +47,15 @@ provider "aws" {
       Repository  = local.repository
       Author      = local.author
     }
+  }
+}
+
+data "terraform_remote_state" "maintenance" {
+  backend = "s3"
+
+  config = {
+    bucket = "vlayusuke-terraform-infrastructure"
+    region = "ap-northeast-1"
+    key    = "state/maintenance.terraform.tfstate"
   }
 }
