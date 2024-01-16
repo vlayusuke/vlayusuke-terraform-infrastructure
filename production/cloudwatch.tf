@@ -560,7 +560,7 @@ resource "aws_cloudwatch_metric_alarm" "ses_bounce_rate" {
   namespace           = "AWS/SES"
   period              = 60
   statistic           = "Minimum"
-  threshold           = 0.05
+  threshold           = 0.001
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [

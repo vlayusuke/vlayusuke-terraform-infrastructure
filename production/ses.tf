@@ -36,7 +36,7 @@ resource "aws_route53_record" "ses_main_dkim" {
   ]
 }
 
-resource "aws_route53_record" "ses_spf" {
+resource "aws_route53_record" "ses_main_spf" {
   zone_id = aws_route53_zone.main.zone_id
   name    = local.domain
   type    = "TXT"
@@ -44,6 +44,17 @@ resource "aws_route53_record" "ses_spf" {
 
   records = [
     "v-spf1 include:amazonses.com ~all",
+  ]
+}
+
+resource "aws_route53_record" "ses_main_dmarc" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = local.domain
+  type    = "TXT"
+  ttl     = 600
+
+  records = [
+    "v=DMARC1;p=none;pct=100;rua=mailto:postmaster@vlayusuke.net"
   ]
 }
 
