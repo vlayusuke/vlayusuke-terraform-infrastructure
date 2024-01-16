@@ -43,13 +43,13 @@ resource "aws_route53_record" "ses_main_spf" {
   ttl     = 600
 
   records = [
-    "v-spf1 include:amazonses.com ~all",
+    "v=spf1 include:amazonses.com ~all",
   ]
 }
 
 resource "aws_route53_record" "ses_main_dmarc" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = local.domain
+  name    = "_dmarc.${local.domain}"
   type    = "TXT"
   ttl     = 600
 
