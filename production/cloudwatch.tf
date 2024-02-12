@@ -2,8 +2,8 @@
 # CloudWatch Log group for ECS
 # ===============================================================================
 resource "aws_cloudwatch_log_group" "app" {
-  count             = length(local.app_log_group)
-  name              = "${local.project}-${local.env}-cw-${local.app_log_group[count.index]}-cwlog"
+  for_each          = local.app_log_group
+  name              = "${local.project}-${local.env}-cw-${each.key}-cwlog"
   retention_in_days = local.retention_in_days
 
   tags = {
@@ -12,27 +12,27 @@ resource "aws_cloudwatch_log_group" "app" {
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "app_to_lambda" {
-  count           = length(local.app_log_group)
+  for_each        = local.app_log_group
   name            = aws_lambda_function.lambda_log_error_alert.function_name
-  log_group_name  = aws_cloudwatch_log_group.app[count.index].name
+  log_group_name  = "${local.project}-${local.env}-cw-${each.key}-cwlog"
   filter_pattern  = "{ $.level_name = \"ERROR\" || $.level_name = \"CRITICAL\" || $.level_name = \"ALERT\" || $.level_name = \"EMERGENCY\" }"
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
 }
 
 resource "aws_cloudwatch_log_group" "nginx" {
-  count             = length(local.nginx_log_group)
-  name              = "${local.project}-${local.env}-cw-${local.nginx_log_group[count.index]}-cwlog"
+  for_each          = local.nginx_log_group
+  name              = "${local.project}-${local.env}-cw-${each.key}-cwlog"
   retention_in_days = local.retention_in_days
 
   tags = {
-    Name = "${local.project}-${local.env}-cw-${local.nginx_log_group[count.index]}-cwlog"
+    Name = "${local.project}-${local.env}-cw-${each.key}-cwlog"
   }
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "nginx_to_lambda" {
-  count           = length(local.nginx_log_group)
+  for_each        = local.nginx_log_group
   name            = aws_lambda_function.lambda_log_error_alert.function_name
-  log_group_name  = aws_cloudwatch_log_group.nginx[count.index].name
+  log_group_name  = "${local.project}-${local.env}-cw-${each.key}-cwlog"
   filter_pattern  = "{ $.status = \"5*\" || $.request_time >= 3.000 }"
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
 }
@@ -42,19 +42,19 @@ resource "aws_cloudwatch_log_subscription_filter" "nginx_to_lambda" {
 # CloudWatch Log group for RDS
 # ===============================================================================
 resource "aws_cloudwatch_log_group" "rds" {
-  count             = length(local.enabled_cloudwatch_logs_exports)
-  name              = "/aws/rds/cluster/${aws_rds_cluster.aurora.cluster_identifier}/${local.enabled_cloudwatch_logs_exports[count.index]}"
+  for_each          = local.enabled_cloudwatch_logs_exports
+  name              = "/aws/rds/cluster/${aws_rds_cluster.aurora.cluster_identifier}/${each.key}"
   retention_in_days = local.retention_in_days
 
   tags = {
-    Name = "/aws/rds/cluster/${aws_rds_cluster.aurora.cluster_identifier}/${local.enabled_cloudwatch_logs_exports[count.index]}"
+    Name = "/aws/rds/cluster/${aws_rds_cluster.aurora.cluster_identifier}/${each.key}"
   }
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "rds" {
-  count           = length(local.enabled_cloudwatch_logs_exports)
+  for_each        = local.enabled_cloudwatch_logs_exports
   name            = aws_lambda_function.lambda_log_error_alert.function_name
-  log_group_name  = aws_cloudwatch_log_group.rds[count.index].name
+  log_group_name  = "/aws/rds/cluster/${aws_rds_cluster.aurora.cluster_identifier}/${each.key}"
   filter_pattern  = "?Warning ?Error"
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
 }
