@@ -2,18 +2,20 @@
 # Terraform
 # ===============================================================================
 terraform {
-  required_version = "1.9.4"
+  required_version = "1.9.8"
 
   backend "s3" {
-    bucket = "vlayusuke-terraform-infrastructure"
-    key    = "root/terraform.tfstate"
-    region = "ap-northeast-1"
+    bucket                   = "vlayusuke-terraform-infrastructure"
+    key                      = "root/terraform.tfstate"
+    region                   = "ap-northeast-1"
+    shared_credentials_files = ["~/.aws/credentials"]
+    profile                  = "terraform-infrastructure"
   }
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "5.47.0"
+      version = "5.88.0"
     }
   }
 }
