@@ -2,7 +2,7 @@
 # Terraform
 # ===============================================================================
 terraform {
-  required_version = "1.6.6"
+  required_version = "1.9.4"
 
   backend "s3" {
     bucket = "vlayusuke-terraform-infrastructure"
@@ -13,7 +13,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "5.31.0"
+      version = "5.47.0"
     }
   }
 }
