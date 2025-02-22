@@ -1,17 +1,14 @@
 # ===============================================================================
 # Chatbot
 # ===============================================================================
-module "sns_to_slack_via_chatbot" {
-  source  = "waveaccounting/chatbot-slack-configuration/aws"
-  version = "1.1.0"
-
+resource "aws_chatbot_slack_channel_configuration" "notification_slack" {
   configuration_name = "${local.project}-${local.env}-sns-via-chatbot"
   iam_role_arn       = aws_iam_role.chatbot.arn
   slack_channel_id   = var.slack_channel_id
-  slack_workspace_id = var.slack_workspace_id
+  slack_team_id      = var.slack_workspace_id
   logging_level      = "INFO"
 
-  guardrail_policies = [
+  guardrail_policy_arns = [
     aws_iam_policy.chatbot_guardrail.arn,
   ]
 

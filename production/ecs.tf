@@ -18,7 +18,7 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 
   default_capacity_provider_strategy {
     base              = 1
-    capacity_provider = "FARGATE_SPOT"
+    capacity_provider = "FARGATE"
     weight            = 1
   }
 }
@@ -37,7 +37,7 @@ resource "aws_ecs_service" "app" {
   enable_execute_command             = true
 
   capacity_provider_strategy {
-    base              = 0
+    base              = 1
     capacity_provider = "FARGATE"
     weight            = 0
   }
@@ -199,7 +199,7 @@ resource "aws_ecs_service" "cron" {
   platform_version                   = "1.4.0"
 
   capacity_provider_strategy {
-    base              = 0
+    base              = 1
     capacity_provider = "FARGATE"
     weight            = 0
   }
@@ -278,7 +278,7 @@ resource "aws_ecs_service" "queue" {
   platform_version                   = "1.4.0"
 
   capacity_provider_strategy {
-    base              = 0
+    base              = 1
     capacity_provider = "FARGATE"
     weight            = 0
   }
