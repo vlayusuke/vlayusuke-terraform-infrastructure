@@ -2,7 +2,7 @@
 # Config
 # ===============================================================================
 resource "aws_config_configuration_recorder" "default" {
-  name     = "${local.project}-${local-env}-aws-config-default-recorder"
+  name     = "${local.project}-${local.env}-aws-config-default-recorder"
   role_arn = aws_iam_role.config_recorder.arn
 
   recording_group {
