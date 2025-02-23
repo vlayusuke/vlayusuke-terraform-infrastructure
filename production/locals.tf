@@ -24,12 +24,12 @@ locals {
 # ===============================================================================
 locals {
   rds_max_connections = 512
-  enabled_cloudwatch_logs_exports = [
+  enabled_cloudwatch_logs_exports = toset([
     "audit",
     "error",
     "general",
     "slowquery",
-  ]
+  ])
 }
 
 
@@ -42,15 +42,17 @@ locals {
     aws_lambda_function.rds_control.function_name,
     aws_lambda_function.lambda_log_error_alert.function_name,
   ])
-  app_log_group = [
+
+  app_log_group = toset([
     "app-app",
     "cron",
     "queue",
     "migrate",
-  ]
-  nginx_log_group = [
+  ])
+
+  nginx_log_group = toset([
     "app-nginx",
-  ]
+  ])
 }
 
 
