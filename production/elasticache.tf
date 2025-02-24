@@ -17,7 +17,7 @@ resource "aws_elasticache_replication_group" "redis" {
   snapshot_retention_limit   = 14
   snapshot_window            = "15:00-16:00"
   transit_encryption_enabled = true
-  transit_encryption_mode    = "preffereed"
+  transit_encryption_mode    = "preffered"
 
   security_group_ids = [
     aws_security_group.redis.id,
