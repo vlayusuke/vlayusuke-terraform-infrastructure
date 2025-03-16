@@ -1,5 +1,5 @@
 # ===============================================================================
-# Chatbot
+# Chatbot (Amazon Q Developer)
 # ===============================================================================
 resource "aws_chatbot_slack_channel_configuration" "notification_slack" {
   configuration_name = "${local.project}-${local.env}-sns-via-chatbot"

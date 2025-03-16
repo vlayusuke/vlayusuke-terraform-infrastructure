@@ -7,7 +7,8 @@
 # Environment
 # ===============================================================================
 locals {
-  env = "prd"
+  env             = "prd"
+  repository_name = "vlayusuke"
 }
 
 

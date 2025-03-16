@@ -102,7 +102,7 @@ resource "aws_cloudwatch_log_stream" "ses" {
 resource "aws_cloudwatch_log_subscription_filter" "ses" {
   name            = aws_lambda_function.lambda_log_error_alert.function_name
   log_group_name  = aws_cloudwatch_log_group.ses.name
-  filter_pattern  = "bounce"
+  filter_pattern  = "?bounce ?complaint"
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
 }
 
