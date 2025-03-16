@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "github_actions_deploy_assume" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:arsaga-partners/${local.project}-server:*",
+        "repo:${local.repository_name}/${local.project}-server:*",
       ]
     }
   }
@@ -958,7 +958,7 @@ data "aws_iam_policy_document" "event_bridge_scheduler" {
       "rds:StopDBCluster",
     ]
     resources = [
-      "arn:aws:rds:${local.region}:${data.aws_caller_identity.current.account_id}:cluster:${local.project}-${local.env}-aurora-cluster"
+      "arn:aws:rds:${local.region}:${data.aws_caller_identity.current.account_id}:cluster:${local.project}-${local.env}-aurora-cluster",
     ]
   }
 }

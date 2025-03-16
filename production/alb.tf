@@ -42,6 +42,10 @@ resource "aws_lb_listener" "alb_external_listener" {
     }
   }
 
+  depends_on = [
+    aws_acm_certificate_validation.main,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-ext-alb-listener"
   }

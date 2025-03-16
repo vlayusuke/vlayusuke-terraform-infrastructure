@@ -10,8 +10,7 @@ resource "aws_ecr_repository" "nginx_base" {
   }
 
   tags = {
-    Name      = "${local.project}-${local.env}-ecr-nginx-base"
-    inspector = "true"
+    Name = "${local.project}-${local.env}-ecr-nginx-base"
   }
 }
 
@@ -28,8 +27,7 @@ resource "aws_ecr_repository" "app_base" {
   }
 
   tags = {
-    Name      = "${local.project}-${local.env}-ecr-app-base"
-    inspector = "true"
+    Name = "${local.project}-${local.env}-ecr-app-base"
   }
 }
 
@@ -46,8 +44,7 @@ resource "aws_ecr_repository" "nginx" {
   }
 
   tags = {
-    Name      = "${local.project}-${local.env}-ecr-nginx"
-    inspector = "true"
+    Name = "${local.project}-${local.env}-ecr-nginx"
   }
 }
 
@@ -85,8 +82,7 @@ resource "aws_ecr_repository" "app" {
   }
 
   tags = {
-    Name      = "${local.project}-${local.env}-ecr-app"
-    inspector = "true"
+    Name = "${local.project}-${local.env}-ecr-app"
   }
 }
 
