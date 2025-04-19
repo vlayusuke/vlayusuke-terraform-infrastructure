@@ -2,7 +2,7 @@
 # Config
 # ===============================================================================
 resource "aws_config_configuration_recorder" "default" {
-  name     = "${local.project}-${local.env}-aws-config-default-recorder"
+  name     = "${local.project}-${local.env}-aws-cfg-default-recorder"
   role_arn = aws_iam_role.config_recorder.arn
 
   recording_group {
@@ -154,7 +154,7 @@ resource "aws_config_configuration_recorder" "default" {
 }
 
 resource "aws_config_delivery_channel" "default" {
-  name           = "${local.project}-${local-env}-aws-config-default-channel"
+  name           = "default"
   s3_bucket_name = aws_s3_bucket.config_logs.bucket
 
   depends_on = [
@@ -176,7 +176,7 @@ resource "aws_config_configuration_recorder_status" "default" {
 }
 
 resource "aws_cloudformation_stack" "operational_best_practices_for_cis" {
-  name = "${local.project}-${local.env}-operational-best-practices-for-cis"
+  name = "${local.project}-${local.env}-aws-cfg-operational-best-practices-for-cis"
   # commit: 9018e3a3003bde8d8898a2912de64cce39a20b80
   # https://github.com/awslabs/aws-config-rules/blob/master/aws-config-conformance-packs/Operational-Best-Practices-for-CIS.yaml
   template_body = file("./files/cloudformation/Operational-Best-Practices-for-CIS.yaml")

@@ -14,9 +14,9 @@ headers = {
 def lambda_handler(event, context):
     print(event)
     data = event['awslogs']['data']
-    json_str = zlib.decompress(base64.b64decode(
-        data), 16 + zlib.MAX_WBITS).decode('utf-8')
+    json_str = zlib.decompress(base64.b64decode(data), 16 + zlib.MAX_WBITS).decode('utf-8')
     json_data = json.loads(json_str)
+
     for row in json_data['logEvents']:
         print(row)
         log_message = '''
@@ -31,8 +31,9 @@ def lambda_handler(event, context):
         params = {
             'text': log_message
         }
-        req = request.Request(hook_url, json.dumps(
-            params).encode(), headers, method='POST')
+
+        req = request.Request(hook_url, json.dumps(params).encode(), headers, method='POST')
+
         with request.urlopen(req) as res:
             content = res.read()
             print(content)

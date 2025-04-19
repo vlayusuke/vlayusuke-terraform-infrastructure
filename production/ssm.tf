@@ -6,7 +6,7 @@ resource "aws_ssm_parameter" "app_mysql_password" {
   description = "The parameter for mysql password"
   key_id      = aws_kms_key.application.key_id
   type        = "SecureString"
-  value       = "Please Change!"
+  value       = "PleaseChange!"
 
   lifecycle {
     ignore_changes = [
@@ -28,7 +28,7 @@ resource "aws_ssm_parameter" "app_key" {
   description = "The parameter for ${local.project}-${local.env} app key"
   key_id      = aws_kms_key.application.key_id
   type        = "SecureString"
-  value       = "Please Change!"
+  value       = "PleaseChange!"
 
   lifecycle {
     ignore_changes = [
@@ -46,7 +46,7 @@ resource "aws_ssm_parameter" "jwt_secret" {
   description = "The parameter for ${local.project}-${local.env} jwt secret"
   key_id      = aws_kms_key.application.key_id
   type        = "SecureString"
-  value       = "Please Change!"
+  value       = "PleaseChange!"
 
   lifecycle {
     ignore_changes = [
@@ -64,7 +64,7 @@ resource "aws_ssm_parameter" "aurora_writer_endpoint" {
   description = "The parameter for ${local.project}-${local.env} cluster endpoint"
   key_id      = aws_kms_key.application.key_id
   type        = "SecureString"
-  value       = "Please Change!"
+  value       = "PleaseChange!"
 
   lifecycle {
     ignore_changes = [
@@ -82,7 +82,7 @@ resource "aws_ssm_parameter" "aurora_reader_endpoint" {
   description = "The parameter for ${local.project}-${local.env} reader endpoint"
   key_id      = aws_kms_key.application.key_id
   type        = "SecureString"
-  value       = "Please Change!"
+  value       = "PleaseChange!"
 
   lifecycle {
     ignore_changes = [
@@ -100,7 +100,7 @@ resource "aws_ssm_parameter" "ec_writer_endpoint" {
   description = "The parameter for ${local.project}-${local.env} ec cluster endpoint"
   key_id      = aws_kms_key.application.key_id
   type        = "SecureString"
-  value       = "Please Change!"
+  value       = "PleaseChange!"
 
   lifecycle {
     ignore_changes = [
@@ -118,7 +118,7 @@ resource "aws_ssm_parameter" "ec_reader_endpoint" {
   description = "The parameter for ${local.project}-${local.env} ec reader endpoint"
   key_id      = aws_kms_key.application.key_id
   type        = "SecureString"
-  value       = "Please Change!"
+  value       = "PleaseChange!"
 
   lifecycle {
     ignore_changes = [

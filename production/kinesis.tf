@@ -19,6 +19,11 @@ resource "aws_kinesis_firehose_delivery_stream" "ses_event_log" {
     }
   }
 
+  server_side_encryption {
+    enabled  = true
+    key_type = "AWS_OWNED_CMK"
+  }
+
   tags = {
     Name = "${local.project}-${local.env}-ses-event-log-to-s3"
   }
@@ -28,44 +33,150 @@ resource "aws_kinesis_firehose_delivery_stream" "ses_event_log" {
 # ===============================================================================
 # Kinesis Data Firehose Stream (Aurora log)
 # ===============================================================================
-resource "aws_kinesis_firehose_delivery_stream" "aurora_logs" {
-  name        = element(local.kinesis_name_aurora, count.index)
+resource "aws_kinesis_firehose_delivery_stream" "aurora_logs_audit" {
+  name        = "${local.project}-${local.env}-ks-aurora-log-audit-to-s3"
   destination = "extended_s3"
-  count       = length(local.log_group_name_aurora)
 
   extended_s3_configuration {
     role_arn           = aws_iam_role.kinesis_data_firehose.arn
     bucket_arn         = aws_s3_bucket.aurora_logs.arn
     buffering_size     = 64
     buffering_interval = 300
-    prefix             = element(local.s3_prefix_aurora, count.index)
+    prefix             = "audit/"
     compression_format = "GZIP"
   }
 
+  server_side_encryption {
+    enabled  = true
+    key_type = "AWS_OWNED_CMK"
+  }
+
   tags = {
-    Name = element(local.kinesis_name_aurora, count.index)
+    Name = "${local.project}-${local.env}-ks-aurora-log-audit-to-s3"
+  }
+}
+
+resource "aws_kinesis_firehose_delivery_stream" "aurora_logs_error" {
+  name        = "${local.project}-${local.env}-ks-aurora-log-error-to-s3"
+  destination = "extended_s3"
+
+  extended_s3_configuration {
+    role_arn           = aws_iam_role.kinesis_data_firehose.arn
+    bucket_arn         = aws_s3_bucket.aurora_logs.arn
+    buffering_size     = 64
+    buffering_interval = 300
+    prefix             = "error/"
+    compression_format = "GZIP"
+  }
+
+  server_side_encryption {
+    enabled  = true
+    key_type = "AWS_OWNED_CMK"
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-ks-aurora-log-error-to-s3"
+  }
+}
+
+resource "aws_kinesis_firehose_delivery_stream" "aurora_logs_general" {
+  name        = "${local.project}-${local.env}-ks-aurora-log-general-to-s3"
+  destination = "extended_s3"
+
+  extended_s3_configuration {
+    role_arn           = aws_iam_role.kinesis_data_firehose.arn
+    bucket_arn         = aws_s3_bucket.aurora_logs.arn
+    buffering_size     = 64
+    buffering_interval = 300
+    prefix             = "general/"
+    compression_format = "GZIP"
+  }
+
+  server_side_encryption {
+    enabled  = true
+    key_type = "AWS_OWNED_CMK"
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-ks-aurora-log-general-to-s3"
+  }
+}
+
+resource "aws_kinesis_firehose_delivery_stream" "aurora_logs_slowquery" {
+  name        = "${local.project}-${local.env}-ks-aurora-log-slowquery-to-s3"
+  destination = "extended_s3"
+
+  extended_s3_configuration {
+    role_arn           = aws_iam_role.kinesis_data_firehose.arn
+    bucket_arn         = aws_s3_bucket.aurora_logs.arn
+    buffering_size     = 64
+    buffering_interval = 300
+    prefix             = "slowquery/"
+    compression_format = "GZIP"
+  }
+
+  server_side_encryption {
+    enabled  = true
+    key_type = "AWS_OWNED_CMK"
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-ks-aurora-log-slowquery-to-s3"
   }
 }
 
 
 # ===============================================================================
-# Kinesis Data Firehose Stream (ECS log)
+# Kinesis Data Firehose Stream (ECS log App)
 # ===============================================================================
-resource "aws_kinesis_firehose_delivery_stream" "ecs_logs" {
-  name        = element(local.kinesis_name_ecs, count.index)
+resource "aws_kinesis_firehose_delivery_stream" "ecs_logs_app" {
+  for_each    = local.app_log_group
+  name        = "${local.project}-${local.env}-ecs-log-${each.key}-to-s3"
   destination = "extended_s3"
-  count       = length(local.log_group_name_ecs)
 
   extended_s3_configuration {
     role_arn           = aws_iam_role.kinesis_data_firehose.arn
     bucket_arn         = aws_s3_bucket.ecs_logs.arn
     buffering_size     = 64
     buffering_interval = 300
-    prefix             = element(local.s3_prefix_ecs, count.index)
+    prefix             = "${each.key}/"
     compression_format = "GZIP"
   }
 
+  server_side_encryption {
+    enabled  = true
+    key_type = "AWS_OWNED_CMK"
+  }
+
   tags = {
-    Name = element(local.kinesis_name_ecs, count.index)
+    Name = "${local.project}-${local.env}-ecs-log-${each.key}-to-s3"
+  }
+}
+
+
+# ===============================================================================
+# Kinesis Data Firehose Stream (ECS log NginX)
+# ===============================================================================
+resource "aws_kinesis_firehose_delivery_stream" "ecs_logs_nginx" {
+  for_each    = local.nginx_log_group
+  name        = "${local.project}-${local.env}-ecs-log-${each.key}-to-s3"
+  destination = "extended_s3"
+
+  extended_s3_configuration {
+    role_arn           = aws_iam_role.kinesis_data_firehose.arn
+    bucket_arn         = aws_s3_bucket.ecs_logs.arn
+    buffering_size     = 64
+    buffering_interval = 300
+    prefix             = "${each.key}/"
+    compression_format = "GZIP"
+  }
+
+  server_side_encryption {
+    enabled  = true
+    key_type = "AWS_OWNED_CMK"
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-ecs-log-${each.key}-to-s3"
   }
 }

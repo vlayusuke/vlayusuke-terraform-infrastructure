@@ -1,12 +1,12 @@
-variable "root_hook_url" {
+variable "audit_hook_url" {
   type      = string
   sensitive = true
 }
 
-variable "root_slack_workspace_id" {
+variable "audit_slack_workspace_id" {
   sensitive = true
 }
 
-variable "root_slack_channel_id" {
+variable "audit_slack_channel_id" {
   sensitive = true
 }

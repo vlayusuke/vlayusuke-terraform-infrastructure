@@ -1,8 +1,8 @@
 # ===============================================================================
 # SNS Topic for Notification to Slack
 # ===============================================================================
-resource "aws_sns_topic" "to_slack_general" {
-  name = "${local.project}-${local.env}-to-slack-general-topic"
+resource "aws_sns_topic" "to_slack_audit" {
+  name = "${local.project}-${local.env}-sns-to-slack-audit"
 
   delivery_policy = jsonencode({
     "http" : {
@@ -20,34 +20,34 @@ resource "aws_sns_topic" "to_slack_general" {
   })
 
   tags = {
-    Name = "${local.project}-${local.env}-to-slack-general-topic"
+    Name = "${local.project}-${local.env}-sns-to-slack-audit"
   }
 }
 
-resource "aws_sns_topic_policy" "to_slack_general" {
-  arn = aws_sns_topic.to_slack_general.arn
+resource "aws_sns_topic_policy" "to_slack_audit" {
+  arn = aws_sns_topic.to_slack_audit.arn
 
-  policy = data.aws_iam_policy_document.to_slack_general.json
+  policy = data.aws_iam_policy_document.to_slack_audit.json
 }
 
-data "aws_iam_policy_document" "to_slack_general" {
+data "aws_iam_policy_document" "to_slack_audit" {
   statement {
     sid    = "SNSAccess"
     effect = "Allow"
     actions = [
-      "sns:GetTopicAttributes",
-      "sns:SetTopicAttributes",
-      "sns:AddPermission",
-      "sns:RemovePermission",
-      "sns:DeleteTopic",
-      "sns:Subscribe",
-      "sns:ListSubscriptionsByTopic",
-      "sns:Publish",
-      "sns:Receive",
+      "SNS:Publish",
+      "SNS:RemovePermission",
+      "SNS:SetTopicAttributes",
+      "SNS:DeleteTopic",
+      "SNS:ListSubscriptionsByTopic",
+      "SNS:GetTopicAttributes",
+      "SNS:AddPermission",
+      "SNS:Subscribe",
     ]
     resources = [
-      aws_sns_topic.to_slack_general.arn,
+      aws_sns_topic.to_slack_audit.arn,
     ]
+
     condition {
       test     = "StringEquals"
       variable = "AWS:SourceOwner"
@@ -55,6 +55,7 @@ data "aws_iam_policy_document" "to_slack_general" {
         data.aws_caller_identity.current.account_id,
       ]
     }
+
     principals {
       type = "AWS"
       identifiers = [
@@ -70,7 +71,7 @@ data "aws_iam_policy_document" "to_slack_general" {
       "sns:Publish",
     ]
     resources = [
-      aws_sns_topic.to_slack_general.arn,
+      aws_sns_topic.to_slack_audit.arn,
     ]
     principals {
       type = "Service"

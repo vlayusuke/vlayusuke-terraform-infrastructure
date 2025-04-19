@@ -2,11 +2,12 @@
 # Chatbot (Amazon Q Developer)
 # ===============================================================================
 resource "aws_chatbot_slack_channel_configuration" "notification_slack" {
-  configuration_name = "${local.project}-${local.env}-sns-via-chatbot"
-  iam_role_arn       = aws_iam_role.chatbot.arn
-  slack_channel_id   = var.slack_channel_id
-  slack_team_id      = var.slack_workspace_id
-  logging_level      = "INFO"
+  configuration_name          = "${local.project}-${local.env}-sns-via-chatbot"
+  iam_role_arn                = aws_iam_role.chatbot.arn
+  slack_channel_id            = var.slack_channel_id
+  slack_team_id               = var.slack_workspace_id
+  logging_level               = "INFO"
+  user_authorization_required = false
 
   guardrail_policy_arns = [
     aws_iam_policy.chatbot_guardrail.arn,
@@ -18,4 +19,8 @@ resource "aws_chatbot_slack_channel_configuration" "notification_slack" {
     aws_sns_topic.inspector_notification.arn,
     aws_sns_topic.to_slack.arn,
   ]
+
+  tags = {
+    Name = "${local.project}-${local.env}-sns-via-chatbot"
+  }
 }

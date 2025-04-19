@@ -1,8 +1,8 @@
 # ===============================================================================
 # ALB
 # ===============================================================================
-resource "aws_lb" "main" {
-  name                       = "${local.project}-${local.env}-main-ext-alb"
+resource "aws_lb" "production_external" {
+  name                       = "${local.project}-${local.env}-alb"
   internal                   = false
   load_balancer_type         = "application"
   enable_deletion_protection = false
@@ -12,7 +12,7 @@ resource "aws_lb" "main" {
   ]
 
   subnets = [
-    for subnet in aws_subnet.public :
+    for subnet in aws_subnet.production_public :
     subnet.id
   ]
 
@@ -22,16 +22,16 @@ resource "aws_lb" "main" {
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-main-ext-alb"
+    Name = "${local.project}-${local.env}-alb"
   }
 }
 
 resource "aws_lb_listener" "alb_external_listener" {
-  load_balancer_arn = aws_lb.main.arn
+  load_balancer_arn = aws_lb.production_external.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-2021-06"
-  certificate_arn   = aws_acm_certificate.main.arn
+  certificate_arn   = aws_acm_certificate.production.arn
 
   default_action {
     type = "fixed-response"
@@ -43,20 +43,20 @@ resource "aws_lb_listener" "alb_external_listener" {
   }
 
   depends_on = [
-    aws_acm_certificate_validation.main,
+    aws_acm_certificate_validation.production,
   ]
 
   tags = {
-    Name = "${local.project}-${local.env}-ext-alb-listener"
+    Name = "${local.project}-${local.env}-alb-listener"
   }
 }
 
 resource "aws_lb_target_group" "alb_external_tg" {
-  name                 = "${local.project}-${local.env}-ext-alb-tg"
+  name                 = "${local.project}-${local.env}-alb-tg"
   target_type          = "ip"
   port                 = 80
   protocol             = "HTTP"
-  vpc_id               = aws_vpc.main.id
+  vpc_id               = aws_vpc.production.id
   deregistration_delay = 115
 
   stickiness {
@@ -69,20 +69,22 @@ resource "aws_lb_target_group" "alb_external_tg" {
     healthy_threshold   = 5
     unhealthy_threshold = 2
     path                = "/healthcheck"
+    interval            = 30
+    timeout             = 5
   }
 
   depends_on = [
-    aws_lb.main,
+    aws_lb.production_external,
   ]
 
   tags = {
-    Name = "${local.project}-${local.env}-ext-alb-tg"
+    Name = "${local.project}-${local.env}-alb-tg"
   }
 }
 
 resource "aws_lb_listener_certificate" "alb_listener_cert" {
   listener_arn    = aws_lb_listener.alb_external_listener.arn
-  certificate_arn = aws_acm_certificate.main.arn
+  certificate_arn = aws_acm_certificate.production.arn
 
   depends_on = [
     aws_lb_listener.alb_external_listener,
@@ -110,7 +112,7 @@ resource "aws_lb_listener_rule" "app" {
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-app-alb-listener-rule"
+    Name = "${local.project}-${local.env}-alb-listener-rule"
   }
 }
 
@@ -132,8 +134,8 @@ resource "aws_lb_listener_rule" "naked" {
   action {
     type = "redirect"
     redirect {
-      protocol    = "HTTP"
-      port        = 80
+      protocol    = "HTTPS"
+      port        = 443
       host        = local.domain
       query       = ""
       status_code = "HTTP_301"
@@ -141,6 +143,6 @@ resource "aws_lb_listener_rule" "naked" {
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-app-alb-listener-rule-redirect"
+    Name = "${local.project}-${local.env}-alb-listener-rule-redirect"
   }
 }

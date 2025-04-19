@@ -1,128 +1,212 @@
 # ===============================================================================
-# IAM Require MFA
+# IAM for Deployment
 # ===============================================================================
-resource "aws_iam_policy" "require_mfa" {
-  name   = "${local.project}-${local.env}-iam-require-mfa-policy"
-  policy = data.aws_iam_policy_document.require_mfa.json
+resource "aws_iam_role" "github_actions_deploy" {
+  name               = "${local.project}-${local.env}-iam-github-actions-deploy-role"
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.github_actions_deploy_assume.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-github-actions-deploy-role"
+  }
 }
 
-data "aws_iam_policy_document" "require_mfa" {
+data "aws_iam_policy_document" "github_actions_deploy_assume" {
   statement {
-    sid    = "IAMAccess"
+    sid    = "OIDCFederate"
     effect = "Allow"
     actions = [
-      "iam:UploadSSHPublicKey",
-      "iam:UpdateSSHPublicKey",
-      "iam:UpdateAccessKey",
-      "iam:ResyncMFADevice",
-      "iam:ListSSHPublicKeys",
-      "iam:ListMFADevices",
-      "iam:ListAccessKeys",
-      "iam:GetSSHPublicKey",
-      "iam:EnableMFADevice",
-      "iam:DeleteVirtualMFADevice",
-      "iam:DeleteSSHPublicKey",
-      "iam:DeleteAccessKey",
-      "iam:DeactivateMFADevice",
-      "iam:CreateVirtualMFADevice",
-      "iam:CreateAccessKey",
-      "iam:ChangePassword",
+      "sts:AssumeRoleWithWebIdentity",
     ]
-    resources = [
-      "arn:aws:iam::*:user/$${aws:username}",
-      "arn:aws:iam::*:mfa/$${aws:username}",
-    ]
-  }
-
-  statement {
-    sid    = "IAMPasswordPolicy"
-    effect = "Allow"
-    actions = [
-      "iam:GetAccountPasswordPolicy",
-    ]
-    resources = [
-      "*",
-    ]
-  }
-
-  statement {
-    effect = "Deny"
-    not_actions = [
-      "iam:ResyncMFADevice",
-      "iam:ListMFADevices",
-      "iam:GetAccountPasswordPolicy",
-      "iam:EnableMFADevice",
-      "iam:CreateVirtualMFADevice",
-      "iam:ChangePassword",
-    ]
-    resources = [
-      "*",
-    ]
+    principals {
+      type = "Federated"
+      identifiers = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
+      ]
+    }
     condition {
-      test     = "BoolIfExists"
-      variable = "aws:MultiFactorAuthPresent"
+      test     = "StringLike"
+      variable = "token.actions.githubusercontent.com:sub"
       values = [
-        false,
+        "repo:${local.repository_name}/*",
       ]
     }
   }
+}
+
+resource "aws_iam_policy" "github_actions_deploy" {
+  name   = "${local.project}-${local.env}-iam-github-actions-deploy-policy"
+  policy = data.aws_iam_policy_document.github_actions_deploy.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-github-actions-deploy-policy"
+  }
+}
+
+data "aws_iam_policy_document" "github_actions_deploy" {
+  statement {
+    sid    = "S3Access"
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+    ]
+    resources = [
+      "arn:aws:s3:::${local.project}-${local.env}-*",
+      "arn:aws:s3:::${local.project}-${local.env}-*/*",
+      "arn:aws:s3:::terraform-*",
+    ]
+  }
+}
+
+resource "aws_iam_policy_attachment" "github_actions_deploy" {
+  name = "${local.project}-${local.env}-iam-github-actions-deploy-attachment"
+  roles = [
+    aws_iam_role.github_actions_deploy.name,
+  ]
+  policy_arn = aws_iam_policy.github_actions_deploy.arn
+}
+
+
+# ===============================================================================
+# IAM for Source Code Backup
+# ===============================================================================
+resource "aws_iam_role" "github_actions_backup" {
+  name               = "${local.project}-${local.env}-iam-github-actions-backup-role"
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.github_actions_backup_assume.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-github-actions-backup-role"
+  }
+}
+
+data "aws_iam_policy_document" "github_actions_backup_assume" {
+  statement {
+    sid    = "OIDCFederate"
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRoleWithWebIdentity",
+    ]
+    principals {
+      type = "Federated"
+      identifiers = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
+      ]
+    }
+    condition {
+      test     = "StringLike"
+      variable = "token.actions.githubusercontent.com:sub"
+      values = [
+        "repo:${local.repository_name}/*",
+      ]
+    }
+  }
+}
+
+resource "aws_iam_policy" "github_actions_backup" {
+  name   = "${local.project}-${local.env}-iam-github-actions-backup-policy"
+  policy = data.aws_iam_policy_document.github_actions_backup.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-github-actions-backup-policy"
+  }
+}
+
+data "aws_iam_policy_document" "github_actions_backup" {
+  statement {
+    sid    = "S3Access"
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+    ]
+    resources = [
+      "arn:aws:s3:::${local.project}-${local.env}-*",
+      "arn:aws:s3:::${local.project}-${local.env}-*/*",
+      "arn:aws:s3:::mcury-*",
+    ]
+  }
+}
+
+resource "aws_iam_policy_attachment" "github_actions_backup" {
+  name = "${local.project}-${local.env}-iam-github-actions-backup-attachment"
+  roles = [
+    aws_iam_role.github_actions_backup.name,
+  ]
+  policy_arn = aws_iam_policy.github_actions_backup.arn
 }
 
 
 # ===============================================================================
 # IAM for Lambda (Root Login Monitoring)
 # ===============================================================================
-resource "aws_iam_role" "root_login_monitoring" {
+resource "aws_iam_role" "lambda_root_login_monitoring" {
   name               = "${local.project}-${local.env}-iam-lambda-root-login-monitoring-role"
   path               = "/"
-  assume_role_policy = data.aws_iam_policy_document.root_login_monitoring_assume.json
+  assume_role_policy = data.aws_iam_policy_document.lambda_root_login_monitoring_assume.json
 
   tags = {
     Name = "${local.project}-${local.env}-iam-lambda-root-login-monitoring-role"
   }
 }
 
-data "aws_iam_policy_document" "root_login_monitoring_assume" {
+data "aws_iam_policy_document" "lambda_root_login_monitoring_assume" {
   statement {
     effect = "Allow"
     actions = [
-      "sts:AssumeRole"
+      "sts:AssumeRole",
     ]
     principals {
       type = "Service"
       identifiers = [
-        "lambda.amazonaws.com"
+        "lambda.amazonaws.com",
       ]
     }
   }
 }
 
-resource "aws_iam_policy" "root_login_monitoring" {
+resource "aws_iam_policy" "lambda_root_login_monitoring" {
   name   = "${local.project}-${local.env}-iam-lambda-root-login-monitoring-policy"
-  policy = data.aws_iam_policy_document.root_login_monitoring.json
+  policy = data.aws_iam_policy_document.lambda_root_login_monitoring.json
 
   tags = {
     Name = "${local.project}-${local.env}-iam-lambda-root-login-monitoring-policy"
   }
 }
 
-data "aws_iam_policy_document" "root_login_monitoring" {
+data "aws_iam_policy_document" "lambda_root_login_monitoring" {
   statement {
+    sid    = "GenarateLogs"
     effect = "Allow"
     actions = [
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
     resources = [
-      aws_cloudwatch_log_group.root_login_monitoring.arn,
-      "${aws_cloudwatch_log_group.root_login_monitoring.arn}:*"
+      "arn:aws:logs:*:*:log-group:*",
+    ]
+  }
+
+  statement {
+    sid    = "SNSPublish"
+    effect = "Allow"
+    actions = [
+      "sns:Publish",
+    ]
+    resources = [
+      aws_sns_topic.to_slack_audit.arn,
     ]
   }
 }
 
-resource "aws_iam_role_policy_attachment" "root_login_monitoring" {
-  role       = aws_iam_role.root_login_monitoring.name
-  policy_arn = aws_iam_policy.root_login_monitoring.arn
+resource "aws_iam_role_policy_attachment" "lambda_root_login_monitoring" {
+  role       = aws_iam_role.lambda_root_login_monitoring.name
+  policy_arn = aws_iam_policy.lambda_root_login_monitoring.arn
 }
 
 
@@ -141,7 +225,6 @@ resource "aws_iam_role" "lambda_error" {
 
 data "aws_iam_policy_document" "lambda_error_assume" {
   statement {
-    sid    = ""
     effect = "Allow"
     actions = [
       "sts:AssumeRole",
@@ -166,36 +249,45 @@ resource "aws_iam_policy" "lambda_error" {
 
 data "aws_iam_policy_document" "lambda_error" {
   statement {
+    sid    = "GenarateLogs"
     effect = "Allow"
     actions = [
       "logs:CreateLogGroup",
-      "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
     resources = [
       "arn:aws:logs:${local.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${local.project}-${local.env}-*:*",
     ]
   }
+
+  statement {
+    sid    = "SNSPublish"
+    effect = "Allow"
+    actions = [
+      "sns:Publish",
+    ]
+    resources = [
+      aws_sns_topic.to_slack_audit.arn,
+    ]
+  }
 }
 
-resource "aws_iam_policy_attachment" "lambda_error" {
-  name = "${local.project}-${local.env}-iam-lambda-error-attachment"
-  roles = [
-    aws_iam_role.lambda_error.name,
-  ]
+resource "aws_iam_role_policy_attachment" "lambda_error" {
+  role       = aws_iam_role.lambda_error.name
   policy_arn = aws_iam_policy.lambda_error.arn
 }
+
 
 
 # ===============================================================================
 # IAM for Chatbot
 # ===============================================================================
 resource "aws_iam_role" "chatbot" {
-  name               = "${local.project}-${local.env}-iam-chatbot-general-role"
+  name               = "${local.project}-${local.env}-iam-chatbot-audit-role"
   assume_role_policy = data.aws_iam_policy_document.chatbot_assume.json
 
   tags = {
-    Name = "${local.project}-${local.env}-iam-chatbot-general-role"
+    Name = "${local.project}-${local.env}-iam-chatbot-audit-role"
   }
 }
 
@@ -216,12 +308,12 @@ data "aws_iam_policy_document" "chatbot_assume" {
 }
 
 resource "aws_iam_policy" "chatbot" {
-  name   = "${local.project}-${local.env}-iam-chatbot-general-policy"
+  name   = "${local.project}-${local.env}-iam-chatbot-audit-policy"
   path   = "/"
   policy = data.aws_iam_policy_document.chatbot.json
 
   tags = {
-    Name = "${local.project}-${local.env}-iam-chatbot-general-policy"
+    Name = "${local.project}-${local.env}-iam-chatbot-audit-policy"
   }
 }
 
@@ -263,6 +355,18 @@ data "aws_iam_policy_document" "chatbot" {
   }
 
   statement {
+    sid    = "SNSPublish"
+    effect = "Allow"
+    actions = [
+      "sns:Publish",
+      "sns:Subscribe",
+    ]
+    resources = [
+      aws_sns_topic.to_slack_audit.arn,
+    ]
+  }
+
+  statement {
     sid    = "ChatbotAccess"
     effect = "Allow"
     actions = [
@@ -280,9 +384,14 @@ data "aws_iam_policy_document" "chatbot" {
   }
 }
 
+# resource "aws_iam_role_policy_attachment" "chatbot" {
+#   role       = aws_iam_role.chatbot.name
+#   policy_arn = aws_iam_policy.chatbot.arn
+# }
+
 resource "aws_iam_role_policy_attachment" "chatbot" {
   role       = aws_iam_role.chatbot.name
-  policy_arn = aws_iam_policy.chatbot.arn
+  policy_arn = "arn:aws:iam::aws:policy/AWSResourceExplorerReadOnlyAccess"
 }
 
 
@@ -290,11 +399,11 @@ resource "aws_iam_role_policy_attachment" "chatbot" {
 # IAM for Chatbot Guardrail
 # ===============================================================================
 resource "aws_iam_policy" "chatbot_guardrail" {
-  name   = "${local.project}-${local.env}-iam-chatbot-guardrail-general-policy"
+  name   = "${local.project}-${local.env}-iam-chatbot-guardrail-audit-policy"
   policy = data.aws_iam_policy_document.chatbot_guardrail.json
 
   tags = {
-    Name = "${local.project}-${local.env}-iam-chatbot-guardrail-general-policy"
+    Name = "${local.project}-${local.env}-iam-chatbot-guardrail-audit-policy"
   }
 }
 
@@ -314,7 +423,7 @@ data "aws_iam_policy_document" "chatbot_guardrail" {
 
 
 # ===============================================================================
-# AWS Config
+# IAM for AWS Config
 # ===============================================================================
 resource "aws_iam_role" "config_recorder" {
   name               = "${local.project}-${local.env}-iam-aws-config-recorder-role"
@@ -358,12 +467,22 @@ data "aws_iam_policy_document" "config_recorder" {
       "s3:GetBucketAcl",
       "s3:PutObject",
       "s3:PutObjectAcl",
-      "SNS:Publish",
     ]
     resources = [
       aws_s3_bucket.config_logs.arn,
       "${aws_s3_bucket.config_logs.arn}/*",
-      aws_sns_topic.to_slack_general.arn,
+    ]
+  }
+
+  statement {
+    sid    = "ConfigRecorder"
+    effect = "Allow"
+    actions = [
+      "config:DescribeConfigurationRecorders",
+      "config:DeleteConfigurationRecorder",
+    ]
+    resources = [
+      "*",
     ]
   }
 
@@ -378,6 +497,18 @@ data "aws_iam_policy_document" "config_recorder" {
       "*",
     ]
   }
+
+  statement {
+    sid    = "SNSPublish"
+    effect = "Allow"
+    actions = [
+      "sns:Publish",
+      "sns:Subscribe",
+    ]
+    resources = [
+      aws_sns_topic.to_slack_audit.arn,
+    ]
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "config_recorder" {
@@ -385,7 +516,72 @@ resource "aws_iam_role_policy_attachment" "config_recorder" {
   policy_arn = aws_iam_policy.config_recorder.arn
 }
 
-resource "aws_iam_role_policy_attachment" "config_recorder_to_AWSConfigRole" {
+resource "aws_iam_role_policy_attachment" "config_recorder_to_AWS_ConfigRole" {
   role       = aws_iam_role.config_recorder.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSConfigRole"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
+}
+
+
+# ===============================================================================
+# IAM for SNS
+# ===============================================================================
+resource "aws_iam_role" "sns" {
+  name               = "${local.project}-${local.env}-iam-sns-role"
+  assume_role_policy = data.aws_iam_policy_document.sns_assume.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-sns-role"
+  }
+}
+
+data "aws_iam_policy_document" "sns_assume" {
+  statement {
+    sid    = "SNSAssume"
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole",
+    ]
+    principals {
+      type = "Service"
+      identifiers = [
+        "sns.amazonaws.com",
+      ]
+    }
+  }
+}
+
+resource "aws_iam_policy" "sns" {
+  name   = "${local.project}-${local.env}-iam-sns-policy"
+  path   = "/"
+  policy = data.aws_iam_policy_document.sns.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-sns-policy"
+  }
+}
+
+data "aws_iam_policy_document" "sns" {
+  statement {
+    sid    = "DescribeLogs"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+    resources = [
+      aws_cloudwatch_log_group.sns.arn
+    ]
+  }
+
+  statement {
+    sid    = "SNSSubscribe"
+    effect = "Allow"
+    actions = [
+      "sns:Subscribe",
+    ]
+    resources = [
+      aws_sns_topic.to_slack_audit.arn,
+    ]
+  }
 }

@@ -4,10 +4,10 @@
 resource "aws_rds_cluster" "aurora" {
   cluster_identifier              = "${local.project}-${local.env}-aurora-cluster"
   engine                          = "aurora-mysql"
-  engine_version                  = "8.0.mysql_aurora.3.04.0"
+  engine_version                  = "8.0.mysql_aurora.3.08.1"
   database_name                   = local.database_name
   master_username                 = local.database_master_user_name
-  master_password                 = "PleaseChange1234"
+  master_password                 = aws_ssm_parameter.app_mysql_password.value
   backup_retention_period         = 14
   preferred_backup_window         = "20:00-20:30"
   preferred_maintenance_window    = "sat:20:30-sat:21:00"
@@ -26,9 +26,15 @@ resource "aws_rds_cluster" "aurora" {
   lifecycle {
     create_before_destroy = true
     ignore_changes = [
+      database_name,
+      master_username,
       master_password,
     ]
   }
+
+  depends_on = [
+    aws_ssm_parameter.app_mysql_password,
+  ]
 
   tags = {
     Name     = "${local.project}-${local.env}-aurora-cluster"
@@ -39,7 +45,7 @@ resource "aws_rds_cluster" "aurora" {
 resource "aws_db_subnet_group" "aurora" {
   name = "${local.project}-${local.env}-aurora-cluster-subg"
   subnet_ids = [
-    for subnet in aws_subnet.private :
+    for subnet in aws_subnet.production_private :
     subnet.id
   ]
 

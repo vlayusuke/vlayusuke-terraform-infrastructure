@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "github_actions_deploy_assume" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values = [
-        "repo:${local.repository_name}/${local.project}-server:*",
+        "repo:${local.repository_name}/*",
       ]
     }
   }
@@ -88,10 +88,10 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "ecr:PutImage",
     ]
     resources = [
-      aws_ecr_repository.nginx_base.arn,
-      aws_ecr_repository.app_base.arn,
       aws_ecr_repository.nginx.arn,
       aws_ecr_repository.app.arn,
+      aws_ecr_repository.nginx_base.arn,
+      aws_ecr_repository.app_base.arn,
     ]
   }
 
@@ -207,7 +207,7 @@ resource "aws_iam_policy" "ecs_service" {
   policy = data.aws_iam_policy_document.ecs_service.json
 
   tags = {
-    Name = "${local.project}-${local.env}}-iam-ecs-service-policy"
+    Name = "${local.project}-${local.env}-iam-ecs-service-policy"
   }
 }
 
@@ -232,6 +232,7 @@ data "aws_iam_policy_document" "ecs_service" {
     ]
     resources = [
       aws_kms_key.application.arn,
+      aws_kms_key.aurora.arn,
       aws_ssm_parameter.app_mysql_password.arn,
       aws_ssm_parameter.jwt_secret.arn,
       aws_ssm_parameter.app_key.arn,
@@ -332,7 +333,7 @@ data "aws_iam_policy_document" "ecs_task" {
     ]
     resources = [
       "arn:aws:ses:${local.region}:${data.aws_caller_identity.current.account_id}:identity/*",
-      "arn:aws:ses:${local.region}:${data.aws_caller_identity.current.account_id}:configuration-set/${local.project}-${local.env}-event",
+      aws_ses_configuration_set.production_event.arn,
     ]
   }
 
@@ -835,11 +836,13 @@ data "aws_iam_policy_document" "chatbot" {
     effect = "Allow"
     actions = [
       "sns:Publish",
+      "sns:Subscribe",
     ]
     resources = [
       aws_sns_topic.metric_alarm.arn,
       aws_sns_topic.event_alarm.arn,
       aws_sns_topic.inspector_notification.arn,
+      aws_sns_topic.to_slack.arn,
     ]
   }
 
@@ -969,4 +972,81 @@ resource "aws_iam_policy_attachment" "event_bridge_scheduler" {
     aws_iam_role.event_bridge_scheduler.name,
   ]
   policy_arn = aws_iam_policy.event_bridge_scheduler.arn
+}
+
+
+# ===============================================================================
+# IAM for CloudWatch Logs to Kinesis Data Firehose
+# ===============================================================================
+resource "aws_iam_role" "cloudwatch_logs_to_kinesis_data_firehose" {
+  name               = "${local.project}-${local.env}-iam-cw-logs-to-kdf-role"
+  assume_role_policy = data.aws_iam_policy_document.cloudwatch_logs_to_kinesis_data_firehose_assume.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-cw-logs-to-kdf-role"
+  }
+}
+
+data "aws_iam_policy_document" "cloudwatch_logs_to_kinesis_data_firehose_assume" {
+  statement {
+    sid    = "CloudWatchLogsAssume"
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole",
+    ]
+    principals {
+      type = "Service"
+      identifiers = [
+        "firehose.amazonaws.com",
+        "logs.${local.region}.amazonaws.com"
+      ]
+    }
+  }
+}
+
+resource "aws_iam_policy" "cloudwatch_logs_to_kinesis_data_firehose" {
+  name   = "${local.project}-${local.env}-iam-iam-cw-logs-to-kdf-policy"
+  path   = "/"
+  policy = data.aws_iam_policy_document.cloudwatch_logs_to_kinesis_data_firehose.json
+
+  tags = {
+    Name = "${local.project}-${local.env}-iam-iam-cw-logs-to-kdf-policy"
+  }
+}
+
+data "aws_iam_policy_document" "cloudwatch_logs_to_kinesis_data_firehose" {
+  statement {
+    sid    = "KinesisDataFirehoseAccess"
+    effect = "Allow"
+    actions = [
+      "firehose:PutRecord",
+      "firehose:PutRecordBatch",
+    ]
+    resources = [
+      "*",
+    ]
+  }
+
+  statement {
+    sid    = "CloudWatchLogsAccess"
+    effect = "Allow"
+    actions = [
+      "logs:PutLogEvents",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+      "logs:CreateLogGroup",
+      "logs:DescribeLogGroups",
+    ]
+    resources = [
+      aws_cloudwatch_log_stream.ses.arn,
+    ]
+  }
+}
+
+resource "aws_iam_policy_attachment" "cloudwatch_logs_to_kinesis_data_firehose" {
+  name = "${local.project}-${local.env}-iam-cw-logs-to-kdf-attachment"
+  roles = [
+    aws_iam_role.cloudwatch_logs_to_kinesis_data_firehose.name,
+  ]
+  policy_arn = aws_iam_policy.cloudwatch_logs_to_kinesis_data_firehose.arn
 }

@@ -1,6 +1,6 @@
-# ===============================================================================
-# CloudWatch Log group for SES
-# ===============================================================================
+# ================================================================================
+# CloudWatch Log Group for Bastion
+# ================================================================================
 resource "aws_cloudwatch_log_group" "bastion" {
   name              = "${local.project}-${local.env}-cw-bastion-cwlog"
   retention_in_days = local.retention_in_days
@@ -16,11 +16,11 @@ resource "aws_cloudwatch_log_stream" "bastion" {
 }
 
 
-# ===============================================================================
-# CloudWatch Metrics for EC2 (Bastion)
-# ===============================================================================
+# ================================================================================
+# CloudWatch Metrics for Bastion
+# ================================================================================
 resource "aws_cloudwatch_metric_alarm" "bastion_cpu_high" {
-  alarm_name          = "${local.project}-${local.env}-ec2-bastion-cpu-high-alarm"
+  alarm_name          = "${local.project}-${local.env}-cw-bastion-cpu-high-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 2
   metric_name         = "CPUUtilization"
@@ -31,16 +31,16 @@ resource "aws_cloudwatch_metric_alarm" "bastion_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    Instance = aws_instance.ec2_bastion.id
+    Instnce = aws_instance.ec2_bastion.id
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-ec2-bastion-cpu-high-alarm"
+    Name = "${local.project}-${local.env}-cw-bastion-cpu-high-alarm"
   }
 }
 
 resource "aws_cloudwatch_metric_alarm" "bastion_memory_high" {
-  alarm_name          = "${local.project}-${local.env}-ec2-bastion-memory-high-alarm"
+  alarm_name          = "${local.project}-${local.env}-cw-bastion-memory-high-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 2
   metric_name         = "MemoryUtilization"
@@ -51,16 +51,16 @@ resource "aws_cloudwatch_metric_alarm" "bastion_memory_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    Instance = aws_instance.ec2_bastion.id
+    Instnce = aws_instance.ec2_bastion.id
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-ec2-bastion-memory-high-alarm"
+    Name = "${local.project}-${local.env}-cw-bastion-memory-high-alarm"
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "ec2_bastion_status_check_failed" {
-  alarm_name          = "${local.project}-${local.env}-ec2-bastion-status-check-failed-alarm"
+resource "aws_cloudwatch_metric_alarm" "bastion_status_check_failed" {
+  alarm_name          = "${local.project}-${local.env}-cw-bastion-status-check-failed-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 2
   metric_name         = "StatusCheckFailed"
@@ -71,10 +71,10 @@ resource "aws_cloudwatch_metric_alarm" "ec2_bastion_status_check_failed" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    Instance = aws_instance.ec2_bastion.id
+    Instnce = aws_instance.ec2_bastion.id
   }
 
   tags = {
-    Name = "${local.project}-${local.env}-ec2-bastion-status-check-failed-alarm"
+    Name = "${local.project}-${local.env}-cw-bastion-status-check-failed-alarm"
   }
 }

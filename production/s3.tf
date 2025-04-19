@@ -63,6 +63,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "assets" {
     id     = "delete-object"
     status = "Enabled"
 
+    filter {
+      object_size_greater_than = 0
+    }
+
     expiration {
       days = local.expire_days
     }
@@ -96,69 +100,68 @@ resource "aws_s3_bucket_cors_configuration" "assets" {
   }
 }
 
-# In case of using CloudFront, this comment must be delete.
-# resource "aws_s3_bucket_policy" "assets_oac" {
-#   bucket = aws_s3_bucket.assets.id
-#   policy = data.aws_iam_policy_document.assets_oac.json
-# }
-#
-# data "aws_iam_policy_document" "assets_oac" {
-#   statement {
-#     sid    = "S3List"
-#     effect = "Allow"
-#
-#     principals {
-#       type = "Service"
-#       identifiers = [
-#         "cloudfront.amazonaws.com",
-#       ]
-#     }
-#
-#     actions = [
-#       "s3:ListBucket",
-#     ]
-#
-#     resources = [
-#       aws_s3_bucket.assets.arn,
-#     ]
-#
-#    condition {
-#      test     = "StringEquals"
-#      variable = "aws:SourceArn"
-#      values = [
-#        cloudfront_distribution.main.arn,
-#      ]
-#    }
-#   }
-#
-#  statement {
-#    sid    = "S3Get"
-#    effect = "Allow"
-#
-#    principals {
-#      type = "Service"
-#      identifiers = [
-#        "cloudfront.amazonaws.com",
-#      ]
-#    }
-#
-#    actions = [
-#      "s3:GetObject",
-#    ]
-#
-#    resources = [
-#      "${aws_s3_bucket.assets.arn}/*",
-#    ]
-#
-#    condition {
-#      test     = "StringEquals"
-#      variable = "aws:SourceArn"
-#      values = [
-#        cloudfront_distribution.main.arn,
-#      ]
-#    }
-#  }
-# }
+resource "aws_s3_bucket_policy" "assets_oac" {
+  bucket = aws_s3_bucket.assets.id
+  policy = data.aws_iam_policy_document.assets_oac.json
+}
+
+data "aws_iam_policy_document" "assets_oac" {
+  statement {
+    sid    = "S3List"
+    effect = "Allow"
+
+    principals {
+      type = "Service"
+      identifiers = [
+        "cloudfront.amazonaws.com",
+      ]
+    }
+
+    actions = [
+      "s3:ListBucket",
+    ]
+
+    resources = [
+      aws_s3_bucket.assets.arn,
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values = [
+        aws_cloudfront_distribution.production.arn,
+      ]
+    }
+  }
+
+  statement {
+    sid    = "S3Get"
+    effect = "Allow"
+
+    principals {
+      type = "Service"
+      identifiers = [
+        "cloudfront.amazonaws.com",
+      ]
+    }
+
+    actions = [
+      "s3:GetObject",
+    ]
+
+    resources = [
+      "${aws_s3_bucket.assets.arn}/*",
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values = [
+        aws_cloudfront_distribution.production.arn,
+      ]
+    }
+  }
+}
 
 
 # ===============================================================================
@@ -223,6 +226,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     id     = "transition-object"
     status = "Enabled"
 
+    filter {
+      object_size_greater_than = 0
+    }
+
     transition {
       days          = local.expire_days
       storage_class = "GLACIER"
@@ -258,69 +265,68 @@ resource "aws_s3_bucket_cors_configuration" "uploads" {
   }
 }
 
-# In case of using CloudFront, this comment must be delete.
-# resource "aws_s3_bucket_policy" "uploads_oac" {
-#   bucket = aws_s3_bucket.uploads.id
-#   policy = data.aws_iam_policy_document.uploads_oac.json
-# }
-#
-# data "aws_iam_policy_document" "uploads_oac" {
-#   statement {
-#     sid    = "S3List"
-#     effect = "Allow"
-#
-#     principals {
-#       type = "Service"
-#       identifiers = [
-#         "cloudfront.amazonaws.com",
-#       ]
-#     }
-#
-#     actions = [
-#       "s3:ListBucket",
-#     ]
-#
-#     resources = [
-#       aws_s3_bucket.uploads.arn,
-#     ]
-#
-#    condition {
-#      test     = "StringEquals"
-#      variable = "aws:SourceArn"
-#      values = [
-#        cloudfront_distribution.main.arn,
-#      ]
-#    }
-#   }
-#
-#   statement {
-#     sid    = "S3Get"
-#     effect = "Allow"
-#
-#     principals {
-#       type = "Service"
-#       identifiers = [
-#         "cloudfront.amazonaws.com",
-#       ]
-#     }
-#
-#     actions = [
-#       "s3:GetObject",
-#     ]
-#
-#     resources = [
-#       "${aws_s3_bucket.uploads.arn}/*",
-#     ]
-#
-#     condition {
-#       test     = "StringEquals"
-#       variable = "aws:SourceArn"
-#       values = [
-#         cloudfront_distribution.main.arn,
-#       ]
-#     }
-#   }
-# }
+resource "aws_s3_bucket_policy" "uploads_oac" {
+  bucket = aws_s3_bucket.uploads.id
+  policy = data.aws_iam_policy_document.uploads_oac.json
+}
+
+data "aws_iam_policy_document" "uploads_oac" {
+  statement {
+    sid    = "S3List"
+    effect = "Allow"
+
+    principals {
+      type = "Service"
+      identifiers = [
+        "cloudfront.amazonaws.com",
+      ]
+    }
+
+    actions = [
+      "s3:ListBucket",
+    ]
+
+    resources = [
+      aws_s3_bucket.uploads.arn,
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values = [
+        aws_cloudfront_distribution.production.arn,
+      ]
+    }
+  }
+
+  statement {
+    sid    = "S3Get"
+    effect = "Allow"
+
+    principals {
+      type = "Service"
+      identifiers = [
+        "cloudfront.amazonaws.com",
+      ]
+    }
+
+    actions = [
+      "s3:GetObject",
+    ]
+
+    resources = [
+      "${aws_s3_bucket.uploads.arn}/*",
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values = [
+        aws_cloudfront_distribution.production.arn
+      ]
+    }
+  }
+}
 
 
 # ===============================================================================
@@ -389,6 +395,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
   rule {
     id     = "transition-and-delete-object"
     status = "Enabled"
+
+    filter {
+      object_size_greater_than = 0
+    }
 
     transition {
       days          = local.transition_days
@@ -518,6 +528,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "vpc_flow_log" {
     id     = "transition-and-delete-object"
     status = "Enabled"
 
+    filter {
+      object_size_greater_than = 0
+    }
+
     transition {
       days          = local.transition_days
       storage_class = "GLACIER"
@@ -604,6 +618,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "ses_event_log" {
   rule {
     id     = "transition-and-delete-object"
     status = "Enabled"
+
+    filter {
+      object_size_greater_than = 0
+    }
 
     transition {
       days          = local.transition_days
@@ -731,6 +749,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "aurora_logs" {
   rule {
     id     = "transition-and-delete-object"
     status = "Enabled"
+
+    filter {
+      object_size_greater_than = 0
+    }
 
     transition {
       days          = local.transition_days
@@ -869,6 +891,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "ecs_logs" {
     id     = "transition-and-delete-object"
     status = "Enabled"
 
+    filter {
+      object_size_greater_than = 0
+    }
+
     transition {
       days          = local.transition_days
       storage_class = "GLACIER"
@@ -890,6 +916,97 @@ resource "aws_s3_bucket_lifecycle_configuration" "ecs_logs" {
 
   depends_on = [
     aws_s3_bucket_versioning.ecs_logs,
+  ]
+}
+
+
+# ===============================================================================
+# S3 Bucket for CloudFront logs
+# ===============================================================================
+resource "aws_s3_bucket" "cloudfront_logs" {
+  bucket = "${local.project}-${local.env}-s3-cloudfront-logs-bucket"
+
+  tags = {
+    Name = "${local.project}-${local.env}-s3-cloudfront-logs-bucket"
+  }
+}
+
+resource "aws_s3_bucket_ownership_controls" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+  acl    = "private"
+
+  depends_on = [
+    aws_s3_bucket_ownership_controls.cloudfront_logs,
+  ]
+}
+
+resource "aws_s3_bucket_public_access_block" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.bucket
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_versioning" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "cloudfront_logs" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    id     = "transition-and-delete-object"
+    status = "Enabled"
+
+    filter {
+      object_size_greater_than = 0
+    }
+
+    transition {
+      days          = local.transition_days
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = local.expire_days
+    }
+
+    noncurrent_version_transition {
+      noncurrent_days = local.transition_days
+      storage_class   = "GLACIER"
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = local.expire_days
+    }
+  }
+
+  depends_on = [
+    aws_s3_bucket_versioning.cloudfront_logs,
   ]
 }
 
@@ -953,7 +1070,7 @@ resource "aws_s3_bucket_versioning" "access_logs" {
 # S3 Bucket for S3 WAF Logs
 # ===============================================================================
 resource "aws_s3_bucket" "waf_logs" {
-  bucket = "${local.project}-${local.env}-s3-waf-logs-bucket"
+  bucket = "aws-waf-logs-${local.project}-${local.env}-s3-waf-logs-bucket"
 
   tags = {
     Name = "${local.project}-${local.env}-s3-waf-logs-bucket"

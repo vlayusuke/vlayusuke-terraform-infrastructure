@@ -1,7 +1,7 @@
 # ===============================================================================
 # ECS Cluster
 # ===============================================================================
-resource "aws_ecs_cluster" "main" {
+resource "aws_ecs_cluster" "production" {
   name = "${local.project}-${local.env}-ecs-cluster"
 
   tags = {
@@ -9,8 +9,8 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
-resource "aws_ecs_cluster_capacity_providers" "main" {
-  cluster_name = aws_ecs_cluster.main.name
+resource "aws_ecs_cluster_capacity_providers" "production" {
+  cluster_name = aws_ecs_cluster.production.name
   capacity_providers = [
     "FARGATE",
     "FARGATE_SPOT",
@@ -29,7 +29,7 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 # ===============================================================================
 resource "aws_ecs_service" "app" {
   name                               = "app"
-  cluster                            = aws_ecs_cluster.main.id
+  cluster                            = aws_ecs_cluster.production.id
   task_definition                    = data.aws_ecs_task_definition.app.arn
   desired_count                      = 2
   deployment_minimum_healthy_percent = 50
@@ -60,7 +60,7 @@ resource "aws_ecs_service" "app" {
 
   network_configuration {
     subnets = [
-      for subnet in aws_subnet.private :
+      for subnet in aws_subnet.production_private :
       subnet.id
     ]
     security_groups = [
@@ -87,7 +87,7 @@ resource "aws_ecs_service" "app" {
 
 resource "aws_appautoscaling_target" "app" {
   service_namespace  = "ecs"
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
+  resource_id        = "service/${aws_ecs_cluster.production.name}/${aws_ecs_service.app.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   min_capacity       = 2
   max_capacity       = 4
@@ -103,7 +103,7 @@ resource "aws_appautoscaling_target" "app" {
 resource "aws_appautoscaling_policy" "app_scale_out" {
   name               = "scale-out"
   policy_type        = "StepScaling"
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
+  resource_id        = "service/${aws_ecs_cluster.production.name}/${aws_ecs_service.app.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 
@@ -132,7 +132,7 @@ resource "aws_appautoscaling_policy" "app_scale_out" {
 resource "aws_appautoscaling_policy" "app_scale_in" {
   name               = "scale-in"
   policy_type        = "StepScaling"
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
+  resource_id        = "service/${aws_ecs_cluster.production.name}/${aws_ecs_service.app.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 
@@ -192,7 +192,7 @@ data "aws_ecs_task_definition" "app" {
 # ===============================================================================
 resource "aws_ecs_service" "cron" {
   name                               = "cron"
-  cluster                            = aws_ecs_cluster.main.id
+  cluster                            = aws_ecs_cluster.production.id
   task_definition                    = data.aws_ecs_task_definition.cron.arn
   desired_count                      = 1
   deployment_minimum_healthy_percent = 50
@@ -216,7 +216,7 @@ resource "aws_ecs_service" "cron" {
 
   network_configuration {
     subnets = [
-      for subnet in aws_subnet.private :
+      for subnet in aws_subnet.production_private :
       subnet.id
     ]
     security_groups = [
@@ -271,7 +271,7 @@ data "aws_ecs_task_definition" "cron" {
 # ===============================================================================
 resource "aws_ecs_service" "queue" {
   name                               = "queue"
-  cluster                            = aws_ecs_cluster.main.id
+  cluster                            = aws_ecs_cluster.production.id
   task_definition                    = data.aws_ecs_task_definition.queue.arn
   desired_count                      = 1
   deployment_minimum_healthy_percent = 50
@@ -295,7 +295,7 @@ resource "aws_ecs_service" "queue" {
 
   network_configuration {
     subnets = [
-      for subnet in aws_subnet.private :
+      for subnet in aws_subnet.production_private :
       subnet.id
     ]
     security_groups = [

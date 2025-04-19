@@ -1,0 +1,40 @@
+name: Backup Repository to S3
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_BACKUP_ARN: ${{ secrets.AWS_ROLE_BACKUP_ARN }}
+      BUCKET_NAME: ${{ vars.BUCKET_NAME }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: zip
+        run: |
+          REPO_NAME=${GITHUB_REPOSITORY#*/}
+          git ls-files -z | xargs -0 zip "${REPO_NAME}.zip"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_BACKUP_ARN }}
+          role-session-name: GithubActions@${{ github.sha }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          REPO_NAME=${GITHUB_REPOSITORY#*/}
+          aws s3 cp "${REPO_NAME}.zip" "s3://${{ env.BUCKET_NAME }}/${REPO_NAME}.zip" --storage-class STANDARD --region $AWS_REGION
