@@ -2,10 +2,25 @@
 # SNS Topic for Metric Alarm
 # ===============================================================================
 resource "aws_sns_topic" "metric_alarm" {
-  name = "${local.project}-${local.env}-metric-alarm-topic"
+  name = "${local.project}-${local.env}-sns-metric-alarm-topic"
+
+  delivery_policy = jsonencode({
+    "http" : {
+      "defaultHealthyRetryPolicy" : {
+        "minDelayTarget" : 20,
+        "maxDelayTarget" : 20,
+        "numRetries" : 3,
+        "numMaxDelayRetries" : 0,
+        "numNoDelayRetries" : 0,
+        "numMinDelayRetries" : 0,
+        "backoffFunction" : "linear"
+      },
+      "disableSubscriptionOverrides" : false
+    }
+  })
 
   tags = {
-    Name = "${local.project}-${local.env}-metric-alarm-topic"
+    Name = "${local.project}-${local.env}-sns-metric-alarm-topic"
   }
 }
 
@@ -70,10 +85,25 @@ data "aws_iam_policy_document" "metric_alarm_to_slack" {
 # SNS Topic for Event Alarm
 # ===============================================================================
 resource "aws_sns_topic" "event_alarm" {
-  name = "${local.project}-${local.env}-event-alarm-topic"
+  name = "${local.project}-${local.env}-sns-event-alarm-topic"
+
+  delivery_policy = jsonencode({
+    "http" : {
+      "defaultHealthyRetryPolicy" : {
+        "minDelayTarget" : 20,
+        "maxDelayTarget" : 20,
+        "numRetries" : 3,
+        "numMaxDelayRetries" : 0,
+        "numNoDelayRetries" : 0,
+        "numMinDelayRetries" : 0,
+        "backoffFunction" : "linear"
+      },
+      "disableSubscriptionOverrides" : false
+    }
+  })
 
   tags = {
-    Name = "${local.project}-${local.env}-event-alarm-topic"
+    Name = "${local.project}-${local.env}-sns-event-alarm-topic"
   }
 }
 
@@ -138,10 +168,25 @@ data "aws_iam_policy_document" "event_alarm_to_slack" {
 # SNS Topic for Inspector Notification
 # ===============================================================================
 resource "aws_sns_topic" "inspector_notification" {
-  name = "${local.project}-${local.env}-inspector-notification-topic"
+  name = "${local.project}-${local.env}-sns-inspector-notification-topic"
+
+  delivery_policy = jsonencode({
+    "http" : {
+      "defaultHealthyRetryPolicy" : {
+        "minDelayTarget" : 20,
+        "maxDelayTarget" : 20,
+        "numRetries" : 3,
+        "numMaxDelayRetries" : 0,
+        "numNoDelayRetries" : 0,
+        "numMinDelayRetries" : 0,
+        "backoffFunction" : "linear"
+      },
+      "disableSubscriptionOverrides" : false
+    }
+  })
 
   tags = {
-    Name = "${local.project}-${local.env}-inspector-notification-topic"
+    Name = "${local.project}-${local.env}-sns-inspector-notification-topic"
   }
 }
 
@@ -206,7 +251,7 @@ data "aws_iam_policy_document" "inspector_notification_to_slack" {
 # SNS Topic for Notification to Slack
 # ===============================================================================
 resource "aws_sns_topic" "to_slack" {
-  name = "${local.project}-${local.env}-to-slack-topic"
+  name = "${local.project}-${local.env}-sns-to-slack-topic"
 
   delivery_policy = jsonencode({
     "http" : {
@@ -224,7 +269,7 @@ resource "aws_sns_topic" "to_slack" {
   })
 
   tags = {
-    Name = "${local.project}-${local.env}-to-slack-topic"
+    Name = "${local.project}-${local.env}-sns-to-slack-topic"
   }
 }
 
@@ -234,20 +279,18 @@ resource "aws_sns_topic_policy" "to_slack" {
 }
 
 data "aws_iam_policy_document" "to_slack" {
-  version = "2012-10-17"
   statement {
     sid    = "SNSAccess"
     effect = "Allow"
     actions = [
-      "SNS:GetTopicAttributes",
-      "SNS:SetTopicAttributes",
-      "SNS:AddPermission",
-      "SNS:RemovePermission",
-      "SNS:DeleteTopic",
-      "SNS:Subscribe",
-      "SNS:ListSubscriptionsByTopic",
       "SNS:Publish",
-      "SNS:Receive",
+      "SNS:RemovePermission",
+      "SNS:SetTopicAttributes",
+      "SNS:DeleteTopic",
+      "SNS:ListSubscriptionsByTopic",
+      "SNS:GetTopicAttributes",
+      "SNS:AddPermission",
+      "SNS:Subscribe",
     ]
     resources = [
       aws_sns_topic.to_slack.arn,

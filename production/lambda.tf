@@ -48,6 +48,56 @@ resource "aws_lambda_permission" "lambda_cloudwatch_app" {
 
 
 # ===============================================================================
+# Lambda Function for Metric Alarm
+# ===============================================================================
+resource "aws_lambda_function" "lambda_mertric_alarm" {
+  function_name    = "${local.project}-${local.env}-lambda-metric-alarm"
+  role             = aws_iam_role.lambda_cloudwatch.arn
+  handler          = "lambda_function.lambda_handler"
+  filename         = data.archive_file.metric_alarm.output_path
+  source_code_hash = data.archive_file.metric_alarm.output_base64sha256
+  runtime          = "python3.11"
+  timeout          = 10
+  memory_size      = 128
+
+  architectures = [
+    "arm64",
+  ]
+
+  environment {
+    variables = {
+      hook_url = var.hook_url_app
+      region   = local.region
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      source_code_hash,
+    ]
+  }
+
+  tags = {
+    Name = "${local.project}-${local.env}-lambda-metric-alarm"
+  }
+}
+
+data "archive_file" "metric_alarm" {
+  type        = "zip"
+  source_dir  = "${path.cwd}/files/lambda/metric_alarm"
+  output_path = "${path.module}/artifacts/metric_alarm.zip"
+}
+
+resource "aws_lambda_permission" "lambda_metric_alarm" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_mertric_alarm.function_name
+  principal     = "logs.${local.region}.amazonaws.com"
+  source_arn    = "arn:aws:logs:${local.region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+}
+
+
+# ===============================================================================
 # Lambda Function for RDS Control
 # ===============================================================================
 resource "aws_lambda_function" "rds_control" {

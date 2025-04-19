@@ -2,8 +2,9 @@
 # WAF ACL
 # ===============================================================================
 resource "aws_wafv2_web_acl" "main" {
-  name  = "${local.project}-${local.env}-waf-web-acls-main"
-  scope = "REGIONAL"
+  name     = "${local.project}-${local.env}-waf-web-acls-main"
+  scope    = "CLOUDFRONT"
+  provider = aws.virginia
 
   default_action {
     allow {}
@@ -155,6 +156,7 @@ resource "aws_wafv2_web_acl_logging_configuration" "app" {
     aws_s3_bucket.waf_logs.arn,
   ]
   resource_arn = aws_wafv2_web_acl.main.arn
+  provider     = aws.virginia
 
   logging_filter {
     default_behavior = "KEEP"
@@ -169,9 +171,4 @@ resource "aws_wafv2_web_acl_logging_configuration" "app" {
       requirement = "MEETS_ANY"
     }
   }
-}
-
-resource "aws_wafv2_web_acl_association" "main" {
-  resource_arn = aws_lb.main.arn
-  web_acl_arn  = aws_wafv2_web_acl.main.arn
 }

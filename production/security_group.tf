@@ -4,30 +4,37 @@
 resource "aws_security_group" "alb" {
   name        = "${local.project}-${local.env}-alb-sg"
   description = "Security Group for ${local.project}-${local.env} External ALB"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description = "internet"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [
-      "0.0.0.0/0",
-    ]
-  }
+  vpc_id      = aws_vpc.production.id
 
   egress {
     from_port = 0
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
   tags = {
     Name = "${local.project}-${local.env}-alb-sg"
   }
+}
+
+resource "aws_security_group_rule" "ingress_from_cloudfront_sg_rule" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.alb.id
+
+  prefix_list_ids = [
+    data.aws_ec2_managed_prefix_list.cloudfront.id,
+  ]
+}
+
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  id   = "pl-58a04531"
+  name = "com.amazonaws.global.cloudfront.origin-facing"
 }
 
 
@@ -37,7 +44,7 @@ resource "aws_security_group" "alb" {
 resource "aws_security_group" "ecr_vpce" {
   name        = "${local.project}-${local.env}-vpce-ecr-sg"
   description = "Security Group for VPC EndPoint"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "Container Security Group"
@@ -56,7 +63,7 @@ resource "aws_security_group" "ecr_vpce" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
@@ -72,7 +79,7 @@ resource "aws_security_group" "ecr_vpce" {
 resource "aws_security_group" "ssm_vpce" {
   name        = "${local.project}-${local.env}-vpce-ssm-sg"
   description = "Security Group for SSM VPC EndPoint"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "VPC Security Group"
@@ -80,7 +87,7 @@ resource "aws_security_group" "ssm_vpce" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [
-      aws_vpc.main.cidr_block,
+      aws_vpc.production.cidr_block,
     ]
   }
 
@@ -89,7 +96,7 @@ resource "aws_security_group" "ssm_vpce" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
@@ -105,7 +112,7 @@ resource "aws_security_group" "ssm_vpce" {
 resource "aws_security_group" "sns_vpce" {
   name        = "${local.project}-${local.env}-vpce-sns-sg"
   description = "Security Group for SNS VPC EndPoint"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "VPC Security Group"
@@ -113,7 +120,7 @@ resource "aws_security_group" "sns_vpce" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [
-      aws_vpc.main.cidr_block,
+      aws_vpc.production.cidr_block,
     ]
   }
 
@@ -122,7 +129,7 @@ resource "aws_security_group" "sns_vpce" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
@@ -137,8 +144,8 @@ resource "aws_security_group" "sns_vpce" {
 # ===============================================================================
 resource "aws_security_group" "app" {
   name        = "${local.project}-${local.env}-fargate-app-sg"
-  description = "security group for ${local.project}-${local.env} Fargate app"
-  vpc_id      = aws_vpc.main.id
+  description = "Security Group for ${local.project}-${local.env} Fargate app"
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "alb"
@@ -155,7 +162,7 @@ resource "aws_security_group" "app" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
@@ -170,8 +177,8 @@ resource "aws_security_group" "app" {
 # ===============================================================================
 resource "aws_security_group" "cron" {
   name        = "${local.project}-${local.env}-fargate-cron-sg"
-  description = "security group for ${local.project}-${local.env} Fargate cron"
-  vpc_id      = aws_vpc.main.id
+  description = "Security Group for ${local.project}-${local.env} Fargate cron"
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "app"
@@ -188,7 +195,7 @@ resource "aws_security_group" "cron" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
@@ -203,8 +210,8 @@ resource "aws_security_group" "cron" {
 # ===============================================================================
 resource "aws_security_group" "queue" {
   name        = "${local.project}-${local.env}-fargate-queue-sg"
-  description = "security group for ${local.project}-${local.env} Fargate queue"
-  vpc_id      = aws_vpc.main.id
+  description = "Security Group for ${local.project}-${local.env} Fargate queue"
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "app"
@@ -221,7 +228,7 @@ resource "aws_security_group" "queue" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
@@ -237,7 +244,7 @@ resource "aws_security_group" "queue" {
 resource "aws_security_group" "rds" {
   name        = "${local.project}-${local.env}-rds-sg"
   description = "Security Group for ${local.project}-${local.env} rds"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "app"
@@ -274,7 +281,7 @@ resource "aws_security_group" "rds" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 
@@ -290,7 +297,7 @@ resource "aws_security_group" "rds" {
 resource "aws_security_group" "redis" {
   name        = "${local.project}-${local.env}-redis-sg"
   description = "Security Group for ${local.project}-${local.env} redis"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = aws_vpc.production.id
 
   ingress {
     description = "app"
@@ -327,7 +334,7 @@ resource "aws_security_group" "redis" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 

@@ -11,12 +11,27 @@ resource "aws_cloudwatch_log_group" "app" {
   }
 }
 
+resource "aws_cloudwatch_log_stream" "app" {
+  for_each       = local.app_log_group
+  name           = "${local.project}-${local.env}-cw-${each.key}-cwstream"
+  log_group_name = "${local.project}-${local.env}-cw-${each.key}-cwlog"
+}
+
 resource "aws_cloudwatch_log_subscription_filter" "app_to_lambda" {
   for_each        = local.app_log_group
   name            = aws_lambda_function.lambda_log_error_alert.function_name
   log_group_name  = "${local.project}-${local.env}-cw-${each.key}-cwlog"
   filter_pattern  = "{ $.level_name = \"ERROR\" || $.level_name = \"CRITICAL\" || $.level_name = \"ALERT\" || $.level_name = \"EMERGENCY\" }"
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "app_to_firehose" {
+  for_each        = local.app_log_group
+  name            = "${local.project}-${local.env}-cw-${each.key}-to-firehose"
+  log_group_name  = aws_cloudwatch_log_group.app[each.key].name
+  filter_pattern  = ""
+  destination_arn = aws_kinesis_firehose_delivery_stream.ecs_logs_app[each.key].arn
+  role_arn        = aws_iam_role.cloudwatch_logs_to_kinesis_data_firehose.arn
 }
 
 resource "aws_cloudwatch_log_group" "nginx" {
@@ -29,12 +44,27 @@ resource "aws_cloudwatch_log_group" "nginx" {
   }
 }
 
+resource "aws_cloudwatch_log_stream" "nginx" {
+  for_each       = local.nginx_log_group
+  name           = "${local.project}-${local.env}-cw-${each.key}-cwstream"
+  log_group_name = "${local.project}-${local.env}-cw-${each.key}-cwlog"
+}
+
 resource "aws_cloudwatch_log_subscription_filter" "nginx_to_lambda" {
   for_each        = local.nginx_log_group
   name            = aws_lambda_function.lambda_log_error_alert.function_name
   log_group_name  = "${local.project}-${local.env}-cw-${each.key}-cwlog"
   filter_pattern  = "{ $.status = \"5*\" || $.request_time >= 3.000 }"
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "nginx_to_firehose" {
+  for_each        = local.nginx_log_group
+  name            = "${local.project}-${local.env}-cw-${each.key}-to-firehose"
+  log_group_name  = aws_cloudwatch_log_group.nginx[each.key].name
+  filter_pattern  = ""
+  destination_arn = aws_kinesis_firehose_delivery_stream.ecs_logs_nginx[each.key].arn
+  role_arn        = aws_iam_role.cloudwatch_logs_to_kinesis_data_firehose.arn
 }
 
 
@@ -51,12 +81,27 @@ resource "aws_cloudwatch_log_group" "rds" {
   }
 }
 
+resource "aws_cloudwatch_log_stream" "rds" {
+  for_each       = local.enabled_cloudwatch_logs_exports
+  name           = "${local.project}-${local.env}-cw-rds-${each.key}-cwstream"
+  log_group_name = aws_cloudwatch_log_group.rds[each.key].name
+}
+
 resource "aws_cloudwatch_log_subscription_filter" "rds" {
   for_each        = local.enabled_cloudwatch_logs_exports
   name            = aws_lambda_function.lambda_log_error_alert.function_name
   log_group_name  = "/aws/rds/cluster/${aws_rds_cluster.aurora.cluster_identifier}/${each.key}"
   filter_pattern  = "?Warning ?Error"
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "rds_to_firehose" {
+  for_each        = local.aurora_log_types
+  name            = "${local.project}-${local.env}-cw-rds-${each.key}-to-firehose"
+  log_group_name  = "/aws/rds/cluster/${aws_rds_cluster.aurora.cluster_identifier}/${each.key}"
+  filter_pattern  = ""
+  destination_arn = each.value
+  role_arn        = aws_iam_role.cloudwatch_logs_to_kinesis_data_firehose.arn
 }
 
 
@@ -106,6 +151,50 @@ resource "aws_cloudwatch_log_subscription_filter" "ses" {
   destination_arn = aws_lambda_function.lambda_log_error_alert.arn
 }
 
+resource "aws_cloudwatch_log_subscription_filter" "ses_to_firehose" {
+  name            = "${local.project}-${local.env}-cw-ses-to-firehose"
+  log_group_name  = aws_cloudwatch_log_group.ses.name
+  filter_pattern  = ""
+  destination_arn = aws_kinesis_firehose_delivery_stream.ses_event_log.arn
+  role_arn        = aws_iam_role.cloudwatch_logs_to_kinesis_data_firehose.arn
+}
+
+
+# ===============================================================================
+# CloudWatch Log group for KDF
+# ===============================================================================
+resource "aws_cloudwatch_log_group" "kdf" {
+  name              = "/aws/kinesisfirehose/${local.project}-${local.env}-cw-kdf-cwlog"
+  retention_in_days = local.retention_in_days
+
+  tags = {
+    Name = "/aws/kinesisfirehose/${local.project}-${local.env}-cw-kdf-cwlog"
+  }
+}
+
+resource "aws_cloudwatch_log_stream" "kdf" {
+  name           = "${local.project}-${local.env}-cw-kdf-cwstream"
+  log_group_name = aws_cloudwatch_log_group.kdf.name
+}
+
+
+# ===============================================================================
+# CloudWatch Log group for SNS
+# ===============================================================================
+resource "aws_cloudwatch_log_group" "sns" {
+  name              = "${local.project}-${local.env}-sns-status-cwlog"
+  retention_in_days = local.retention_in_days
+
+  tags = {
+    Name = "${local.project}-${local.env}-sns-status-cwlog"
+  }
+}
+
+resource "aws_cloudwatch_log_stream" "sns" {
+  name           = "${local.project}-${local.env}-cw-sns-status-cwstream"
+  log_group_name = aws_cloudwatch_log_group.sns.name
+}
+
 
 # ===============================================================================
 # CloudWatch Metrics for ECS (app)
@@ -122,12 +211,16 @@ resource "aws_cloudwatch_metric_alarm" "app_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = aws_ecs_cluster.production.name
     ServiceName = aws_ecs_service.app.name
   }
 
   alarm_actions = [
     aws_appautoscaling_policy.app_scale_out.arn,
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -149,12 +242,16 @@ resource "aws_cloudwatch_metric_alarm" "app_cpu_low" {
   datapoints_to_alarm = 10
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = aws_ecs_cluster.production.name
     ServiceName = aws_ecs_service.app.name
   }
 
   alarm_actions = [
     aws_appautoscaling_policy.app_scale_in.arn,
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -175,12 +272,16 @@ resource "aws_cloudwatch_metric_alarm" "app_memory_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = aws_ecs_cluster.production.name
     ServiceName = aws_ecs_service.app.name
   }
 
   alarm_actions = [
     aws_appautoscaling_policy.app_scale_out.arn,
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -205,11 +306,15 @@ resource "aws_cloudwatch_metric_alarm" "cron_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = aws_ecs_cluster.production.name
     ServiceName = aws_ecs_service.cron.name
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -230,11 +335,15 @@ resource "aws_cloudwatch_metric_alarm" "cron_memory_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = aws_ecs_cluster.production.name
     ServiceName = aws_ecs_service.cron.name
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -259,11 +368,15 @@ resource "aws_cloudwatch_metric_alarm" "queue_cpu_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = aws_ecs_cluster.production.name
     ServiceName = aws_ecs_service.queue.name
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -284,11 +397,15 @@ resource "aws_cloudwatch_metric_alarm" "queue_memory_high" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = aws_ecs_cluster.production.name
     ServiceName = aws_ecs_service.queue.name
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -313,11 +430,15 @@ resource "aws_cloudwatch_metric_alarm" "alb_healthy_host" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    LoadBalancer = aws_lb.main.arn
+    LoadBalancer = aws_lb.production_external.arn
     TargetGroup  = aws_lb_target_group.alb_external_tg.arn
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -338,11 +459,15 @@ resource "aws_cloudwatch_metric_alarm" "alb_un_healthy_host" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    LoadBalancer = aws_lb.main.arn
+    LoadBalancer = aws_lb.production_external.arn
     TargetGroup  = aws_lb_target_group.alb_external_tg.arn
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -363,11 +488,15 @@ resource "aws_cloudwatch_metric_alarm" "alb_rejected_connection" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    LoadBalancer = aws_lb.main.arn
+    LoadBalancer = aws_lb.production_external.arn
     TargetGroup  = aws_lb_target_group.alb_external_tg.arn
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -399,6 +528,10 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
     aws_sns_topic.metric_alarm.arn,
   ]
 
+  ok_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-rds-cpu-high-alarm"
   }
@@ -423,6 +556,10 @@ resource "aws_cloudwatch_metric_alarm" "rds_memory_high" {
     aws_sns_topic.metric_alarm.arn,
   ]
 
+  ok_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-rds-memory-high-alarm"
   }
@@ -444,6 +581,10 @@ resource "aws_cloudwatch_metric_alarm" "rds_connections_high" {
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -475,6 +616,10 @@ resource "aws_cloudwatch_metric_alarm" "ec_cpu_high" {
     aws_sns_topic.metric_alarm.arn,
   ]
 
+  ok_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-ec-cpu-high-alarm"
   }
@@ -496,6 +641,10 @@ resource "aws_cloudwatch_metric_alarm" "ec_memory_high" {
   }
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -523,6 +672,10 @@ resource "aws_cloudwatch_metric_alarm" "ec_swap_high" {
     aws_sns_topic.metric_alarm.arn,
   ]
 
+  ok_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-ec-swap-high-alarm"
   }
@@ -547,6 +700,10 @@ resource "aws_cloudwatch_metric_alarm" "ses_complaint_rate" {
     aws_sns_topic.metric_alarm.arn,
   ]
 
+  ok_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-ses-complaint-rate-alarm"
   }
@@ -564,6 +721,10 @@ resource "aws_cloudwatch_metric_alarm" "ses_bounce_rate" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
@@ -591,6 +752,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
     aws_sns_topic.metric_alarm.arn,
   ]
 
+  ok_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-lambda-errors-alarm"
   }
@@ -611,6 +776,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
     aws_sns_topic.metric_alarm.arn,
   ]
 
+  ok_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
   tags = {
     Name = "${local.project}-${local.env}-lambda-throttles-alarm"
   }
@@ -628,6 +797,10 @@ resource "aws_cloudwatch_metric_alarm" "lambda_concurrent_executions" {
   treat_missing_data  = "notBreaching"
 
   alarm_actions = [
+    aws_sns_topic.metric_alarm.arn,
+  ]
+
+  ok_actions = [
     aws_sns_topic.metric_alarm.arn,
   ]
 
