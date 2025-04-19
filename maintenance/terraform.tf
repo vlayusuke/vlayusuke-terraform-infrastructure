@@ -15,7 +15,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "5.88.0"
+      version = "5.95.0"
     }
   }
 }
@@ -24,7 +24,8 @@ data "aws_caller_identity" "current" {}
 data "aws_elb_service_account" "main" {}
 
 provider "aws" {
-  region = "ap-northeast-1"
+  region  = "ap-northeast-1"
+  profile = "terraform-infrastructure"
 
   default_tags {
     tags = {
@@ -38,8 +39,9 @@ provider "aws" {
 }
 
 provider "aws" {
-  region = "us-east-1"
-  alias  = "virginia"
+  region  = "us-east-1"
+  alias   = "virginia"
+  profile = "terraform-infrastructure"
 
   default_tags {
     tags = {

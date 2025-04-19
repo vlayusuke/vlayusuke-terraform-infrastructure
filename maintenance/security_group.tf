@@ -1,9 +1,9 @@
-# ===============================================================================
+# ================================================================================
 # Security Group for Bastion
-# ===============================================================================
+# ================================================================================
 resource "aws_security_group" "bastion" {
   name        = "${local.project}-${local.env}-bastion-sg"
-  description = "Security Group for ${local.project}-${local.env} bastion"
+  description = "Security Group for ${local.project}-${local.env} Bastion"
   vpc_id      = aws_vpc.maintenance.id
 
   ingress {
@@ -11,16 +11,17 @@ resource "aws_security_group" "bastion" {
     to_port   = 22
     protocol  = "tcp"
     cidr_blocks = [
-      var.maintenance_ips,
+      for ip in var.maintenance_ips :
+      ip
     ]
   }
 
   egress {
     from_port = 0
     to_port   = 0
-    protocol  = "-1"
+    protocol  = "tcp"
     cidr_blocks = [
-      "0.0.0.0/0",
+      local.default_gateway_cidr,
     ]
   }
 

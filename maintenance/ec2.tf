@@ -1,9 +1,9 @@
-# ===============================================================================
+# ================================================================================
 # EC2 Instance for Bastion
-# ===============================================================================
+# ================================================================================
 resource "aws_instance" "ec2_bastion" {
-  ami                         = data.aws_ssm_parameter.arm64_amzn2_ami.value
-  instance_type               = "t4g.micro"
+  ami                         = data.aws_ssm_parameter.arm64_al2023_ami.value
+  instance_type               = "t4g.nano"
   key_name                    = aws_key_pair.ec2_bastion.key_name
   disable_api_stop            = false
   disable_api_termination     = false
@@ -17,7 +17,8 @@ resource "aws_instance" "ec2_bastion" {
   }
 
   root_block_device {
-    volume_size = 8
+    volume_type = "gp3"
+    volume_size = 256
 
     tags = {
       Name = "${local.project}-${local.env}-ec2-bastion-root-ebs"
@@ -37,9 +38,9 @@ resource "aws_instance" "ec2_bastion" {
 }
 
 
-# ===============================================================================
+# ================================================================================
 # EIP for Bastion
-# ===============================================================================
+# ================================================================================
 resource "aws_eip" "ec2_bastion" {
   instance = aws_instance.ec2_bastion.id
   domain   = "vpc"
@@ -54,9 +55,9 @@ resource "aws_eip" "ec2_bastion" {
 }
 
 
-# ===============================================================================
+# ================================================================================
 # Key Pair
-# ===============================================================================
+# ================================================================================
 resource "aws_key_pair" "ec2_bastion" {
   key_name   = "${local.project}-${local.env}-ec2-bastion-key"
   public_key = var.aws_key_pub_bastion
@@ -67,21 +68,21 @@ resource "aws_key_pair" "ec2_bastion" {
 }
 
 
-# ===============================================================================
+# ================================================================================
 # SSM Parameter
-# ===============================================================================
-data "aws_ssm_parameter" "arm64_amzn2_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2"
+# ================================================================================
+data "aws_ssm_parameter" "arm64_al2023_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
 }
 
-data "aws_ssm_parameter" "x86_64_amzn2_ami" {
-  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+data "aws_ssm_parameter" "x86_64_al2023_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 
-# ===============================================================================
+# ================================================================================
 # EBS Volume default encrypted
-# ===============================================================================
-resource "aws_ebs_encryption_by_default" "ebs_encryption_by_default" {
+# ================================================================================
+resource "aws_ebs_encryption_by_default" "ec2_bastion" {
   enabled = true
 }
